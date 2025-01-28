@@ -9,7 +9,7 @@ const authConfig = defineConfig({
   default: 'jwt',
   guards: {
     jwt: jwtGuard({
-      tokenExpiresIn: '1h',
+      tokenExpiresIn: '1d',
       provider: sessionUserProvider({
         model: () => import('#models/public_user'),
       }),
