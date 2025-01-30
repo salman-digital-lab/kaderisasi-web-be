@@ -13,14 +13,53 @@ import PublicUser from '#models/public_user'
 import Profile from '#models/profile'
 import env from '#start/env'
 import { errors } from '@vinejs/vine'
+import LegacyMember from '#models/legacy_member'
+
+import { createHash } from 'crypto'
+
+enum USER_LEVEL_ENUM {
+  JAMAAH,
+  AKTIVIS = 3,
+  KADER = 6,
+  KADER_LANJUT = 10,
+}
+
+const getLevel = (ssc?: number, lmd?: number, spectra?: number) => {
+  if (ssc !== null && lmd !== null && spectra !== null) {
+    return USER_LEVEL_ENUM.KADER_LANJUT
+  }
+  if (ssc !== null && lmd !== null) {
+    return USER_LEVEL_ENUM.KADER
+  }
+
+  if (ssc !== null) {
+    return USER_LEVEL_ENUM.AKTIVIS
+  }
+  return USER_LEVEL_ENUM.JAMAAH
+}
+
+const generateBadges = (ssc?: number, lmd?: number, spectra?: number) => {
+  const badges = []
+  if (ssc !== null) {
+    badges.push('SSC-' + ssc)
+  }
+  if (lmd !== null) {
+    badges.push('LMD-' + lmd)
+  }
+  if (spectra !== null) {
+    badges.push('SPECTRA-' + spectra)
+  }
+  return badges
+}
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
     try {
       const payload = await registerValidator.validate(request.all())
       const exist = await PublicUser.findBy('email', payload.email)
+      const legacyMember = await LegacyMember.findBy('email', payload.email)
 
-      if (exist) {
+      if (exist || legacyMember) {
         return response.conflict({
           message: 'EMAIL_ALREADY_REGISTERED',
         })
@@ -64,26 +103,76 @@ export default class AuthController {
       const email: string = payload.email
       const password: string = payload.password
       const user = await PublicUser.query().where('email', email).first()
+      const legacyMember = await LegacyMember.findBy('email', email)
 
-      if (!user) {
+      if (!user && !legacyMember) {
         return response.notFound({
           message: 'USER_NOT_FOUND',
         })
       }
 
-      if (!(await hash.verify(user.password, password))) {
-        return response.unauthorized({
-          message: 'WRONG_PASSWORD',
+      if (user) {
+        if (!(await hash.verify(user.password, password))) {
+          return response.unauthorized({
+            message: 'WRONG_PASSWORD',
+          })
+        }
+
+        const data = await Profile.findBy('user_id', user.id)
+        const token = await auth.use('jwt').generate(user)
+
+        return response.ok({
+          message: 'LOGIN_SUCCESS',
+          data: { user, data, token },
         })
       }
 
-      const data = await Profile.findBy('user_id', user.id)
-      const token = await auth.use('jwt').generate(user)
+      if (legacyMember) {
+        const hashedPassword = createHash('md5').update(password).digest('hex')
+        if (hashedPassword !== legacyMember.password) {
+          return response.unauthorized({
+            message: 'WRONG_PASSWORD',
+          })
+        }
 
-      return response.ok({
-        message: 'LOGIN_SUCCESS',
-        data: { user, data, token },
-      })
+        await database.transaction(async (trx) => {
+          const user = new PublicUser()
+          user.email = payload.email
+          user.password = payload.password
+
+          user.useTransaction(trx)
+          await user.save()
+
+          // @ts-ignore cannot find a solution, it is error when using this monorepo
+          await user.related('profile').create({
+            name: legacyMember.name,
+            gender: legacyMember.gender,
+            whatsapp: legacyMember.phone,
+            line: legacyMember.line_id,
+            intakeYear: legacyMember.intake_year,
+            level: getLevel(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
+            // @ts-ignore
+            badges: JSON.stringify(
+              generateBadges(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra)
+            ),
+          })
+        })
+
+        const newUserAfterLegacyMember = await PublicUser.query().where('email', email).first()
+        if (!newUserAfterLegacyMember) {
+          return response.notFound({
+            message: 'USER_NOT_FOUND',
+          })
+        }
+
+        const data = await Profile.findBy('user_id', newUserAfterLegacyMember.id)
+        const token = await auth.use('jwt').generate(newUserAfterLegacyMember)
+
+        return response.ok({
+          message: 'LOGIN_SUCCESS',
+          data: { user: newUserAfterLegacyMember, data, token },
+        })
+      }
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
