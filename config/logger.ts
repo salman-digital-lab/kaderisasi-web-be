@@ -12,7 +12,7 @@ const loggerConfig = defineConfig({
       transport: {
         targets: targets()
           .pushIf(!app.inProduction, targets.pretty())
-          .pushIf(app.inProduction, targets.file({ destination: 'adonisjs.log' }))
+          .pushIf(app.inProduction, targets.file({ destination: 1 }))
           .toArray(),
       },
     },
