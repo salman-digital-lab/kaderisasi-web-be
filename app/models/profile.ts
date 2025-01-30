@@ -22,6 +22,9 @@ export default class Profile extends BaseModel {
   declare name: string
 
   @column()
+  declare badges: string[]
+
+  @column()
   declare personal_id: string
 
   @column()
