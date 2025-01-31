@@ -49,3 +49,5 @@ router
       .use(middleware.auth())
   })
   .prefix('v2')
+
+router.get('health', () => ({ status: 'ok' }))
