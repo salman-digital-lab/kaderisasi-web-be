@@ -18,3 +18,12 @@ export const updateProfileValidator = vine.compile(
     university_temp: vine.string().optional(),
   })
 )
+
+export const imageValidator = vine.compile(
+  vine.object({
+    file: vine.file({
+      size: '2mb',
+      extnames: ['jpg', 'png', 'jpeg', 'PNG', 'JPG', 'JPEG'],
+    }),
+  })
+)

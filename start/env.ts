@@ -34,4 +34,15 @@ export default await Env.create(new URL('../', import.meta.url), {
   SMTP_USERNAME: Env.schema.string(),
   SMTP_PASSWORD: Env.schema.string(),
   MAIL_FROM: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring the drive package
+  |----------------------------------------------------------
+  */
+  DRIVE_DISK: Env.schema.enum(['minio', 'r2'] as const),
+  DRIVE_ACCESS_KEY_ID: Env.schema.string(),
+  DRIVE_SECRET_ACCESS_KEY: Env.schema.string(),
+  DRIVE_ENDPOINT: Env.schema.string(),
+  DRIVE_BUCKET: Env.schema.string(),
 })

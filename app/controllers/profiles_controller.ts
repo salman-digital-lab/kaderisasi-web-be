@@ -2,8 +2,9 @@ import { HttpContext } from '@adonisjs/core/http'
 import PublicUser from '#models/public_user'
 import Profile from '#models/profile'
 import ActivityRegistration from '#models/activity_registration'
-import { updateProfileValidator } from '#validators/profile_validator'
+import { imageValidator, updateProfileValidator } from '#validators/profile_validator'
 import { errors } from '@vinejs/vine'
+import drive from '@adonisjs/drive/services/main'
 
 export default class ProfilesController {
   async show({ response, auth }: HttpContext) {
@@ -75,6 +76,60 @@ export default class ProfilesController {
       return response.internalServerError({
         message: 'GENERAL_ERROR',
         error: error.stack,
+      })
+    }
+  }
+
+  async uploadPicture({ request, response, auth }: HttpContext) {
+    const payload = await request.validateUsing(imageValidator)
+    try {
+      const picture = payload.file
+
+      if (!picture) {
+        return response.badRequest({
+          message: 'PICTURE_REQUIRED',
+        })
+      }
+
+      if (!picture.isValid) {
+        return response.badRequest({
+          message: 'INVALID_PICTURE',
+          error: picture.errors,
+        })
+      }
+
+      const user = auth.getUserOrFail()
+      const profile = await Profile.findByOrFail('user_id', user.id)
+
+      // Delete old picture if exists
+      if (profile.picture) {
+        try {
+          await drive.use().delete(profile.picture)
+        } catch (error) {
+          console.error('Error deleting old picture:', error)
+        }
+      }
+
+      // Generate unique filename
+      const fileName = `${user.id}_${Date.now()}.${picture.extname}`
+      
+      // Upload to drive
+      await picture.moveToDisk(fileName)
+
+      // Update profile with new picture path
+      profile.picture = fileName
+      await profile.save()
+
+      return response.ok({
+        message: 'UPLOAD_SUCCESS',
+        data: {
+          picture: fileName,
+        },
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
       })
     }
   }
