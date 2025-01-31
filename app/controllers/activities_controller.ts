@@ -86,11 +86,15 @@ export default class ActivitiesController {
 
   async register({ params, request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
+    console.log(1)
     try {
       const data = await activityRegistrationValidator.validate(request.all())
+
       const activitySlug: number = params.slug
-      const userData = await Profile.findOrFail(user.id)
+      const userData = await Profile.findByOrFail('user_id', user.id)
+
       const activity = await Activity.findByOrFail('slug', activitySlug)
+
       const registered = await ActivityRegistration.query().where({
         user_id: user.id,
         activity_id: activity.id,
