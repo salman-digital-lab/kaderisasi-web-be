@@ -45,4 +45,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   DRIVE_SECRET_ACCESS_KEY: Env.schema.string(),
   DRIVE_ENDPOINT: Env.schema.string(),
   DRIVE_BUCKET: Env.schema.string(),
+  DRIVE_REGION: Env.schema.string(),
 })

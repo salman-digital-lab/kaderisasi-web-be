@@ -9,7 +9,7 @@ const minioClient = new S3Client({
   },
   forcePathStyle: true,
   endpoint: env.get('DRIVE_ENDPOINT'),
-  region: 'sg-1',
+  region: env.get('DRIVE_REGION'),
 })
 
 const driveConfig = defineConfig({
