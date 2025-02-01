@@ -32,9 +32,11 @@ router
     router
       .group(() => {
         router.post(':slug/register/', [ActivitiesController, 'register']).use(middleware.auth())
-
         router
           .put(':slug/registration', [ActivitiesController, 'questionnaireEdit'])
+          .use(middleware.auth())
+        router
+          .get(':slug/registration', [ActivitiesController, 'getRegistrationData'])
           .use(middleware.auth())
         router.get('/:slug', [ActivitiesController, 'show'])
         router.get('', [ActivitiesController, 'index'])

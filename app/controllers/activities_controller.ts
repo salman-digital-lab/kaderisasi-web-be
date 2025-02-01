@@ -84,6 +84,40 @@ export default class ActivitiesController {
     }
   }
 
+  async getRegistrationData({ auth, params, response }: HttpContext) {
+    const id = auth.user?.id
+    const slug: string = params.slug
+    try {
+      const activity = await Activity.findByOrFail('slug', slug)
+      console.log({
+        user_id: id,
+        activity_id: activity.id,
+      })
+      const registrationData = await ActivityRegistration.query()
+        .where({
+          user_id: id,
+          activity_id: activity.id,
+        })
+        .first()
+
+      if (!registrationData) {
+        return response.notFound({
+          message: 'REGISTRATION_NOT_FOUND',
+        })
+      }
+
+      return response.ok({
+        message: 'GET_DATA_SUCCESS',
+        data: registrationData,
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
   async register({ params, request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
     console.log(1)
