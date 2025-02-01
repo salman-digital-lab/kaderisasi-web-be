@@ -24,7 +24,7 @@ router
         router.get('', [ProfilesController, 'show'])
         router.get('activities', [ProfilesController, 'activities'])
         router.get('activities/:slug', [ActivitiesController, 'registrationCheck'])
-        router.post('/profiles/picture', [ProfilesController, 'uploadPicture'])
+        router.post('picture', [ProfilesController, 'uploadPicture'])
       })
       .prefix('profiles')
       .use(middleware.auth())
