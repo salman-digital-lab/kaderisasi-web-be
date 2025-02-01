@@ -125,10 +125,11 @@ export default class ProfilesController {
       const fileBuffer = fs.readFileSync(picture.tmpPath!)
       await minioClient.send(
         new PutObjectCommand({
-          Bucket: 'kaderisasi-prod',
+          Bucket: env.get('DRIVE_BUCKET'),
           Key: fileName,
           Body: fileBuffer,
           ContentType: picture.type || 'application/octet-stream',
+          ACL: 'public-read'
         })
       )
 
