@@ -4,7 +4,10 @@ import Profile from '#models/profile'
 import ActivityRegistration from '#models/activity_registration'
 import { imageValidator, updateProfileValidator } from '#validators/profile_validator'
 import { errors } from '@vinejs/vine'
-import drive from '@adonisjs/drive/services/main'
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { minioClient } from '#config/drive'
+import fs from 'node:fs'
+import env from '#start/env'
 
 export default class ProfilesController {
   async show({ response, auth }: HttpContext) {
@@ -104,7 +107,12 @@ export default class ProfilesController {
       // Delete old picture if exists
       if (profile.picture) {
         try {
-          await drive.use().delete(profile.picture)
+          await minioClient.send(
+            new DeleteObjectCommand({
+              Bucket: env.get('DRIVE_BUCKET'),
+              Key: profile.picture,
+            })
+          )
         } catch (error) {
           console.error('Error deleting old picture:', error)
         }
@@ -112,9 +120,17 @@ export default class ProfilesController {
 
       // Generate unique filename
       const fileName = `${user.id}_${Date.now()}.${picture.extname}`
-      
-      // Upload to drive
-      await picture.moveToDisk(fileName)
+
+      // Upload to MinIO
+      const fileBuffer = fs.readFileSync(picture.tmpPath!)
+      await minioClient.send(
+        new PutObjectCommand({
+          Bucket: 'kaderisasi-prod',
+          Key: fileName,
+          Body: fileBuffer,
+          ContentType: picture.type || 'application/octet-stream',
+        })
+      )
 
       // Update profile with new picture path
       profile.picture = fileName
