@@ -149,7 +149,6 @@ export default class AuthController {
             gender: legacyMember.gender,
             whatsapp: legacyMember.phone,
             line: legacyMember.line_id,
-            intakeYear: legacyMember.intake_year,
             level: getLevel(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
             // @ts-ignore
             badges: JSON.stringify(

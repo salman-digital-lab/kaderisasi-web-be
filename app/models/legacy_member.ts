@@ -20,7 +20,7 @@ export default class LegacyMember extends BaseModel {
   declare line_id: string
 
   @column()
-  declare intake_year: string
+  declare intake_year: number
 
   @column()
   declare password: string
