@@ -6,7 +6,8 @@ export default class {
   async handle({ request, response }: HttpContext, next: NextFn) {
     await next()
     const datetime = new Date().toLocaleString()
-
+    
+    if (request.url() === '/health') return
     if (response.getStatus() < 400) {
       logger.info(
         'Datetime:' +
