@@ -190,8 +190,9 @@ export default class AuthController {
     try {
       const email: string = request.all().email
       const user = await PublicUser.findBy('email', email)
+      const userLegacy = await LegacyMember.findBy('email', email)
 
-      if (!user) {
+      if (!user && !userLegacy) {
         return response.notFound({
           message: 'EMAIL_NOT_FOUND',
         })
@@ -203,7 +204,7 @@ export default class AuthController {
 
       await mail.send((message) => {
         message
-          .to(user.email)
+          .to(email)
           .from(fromAddress, 'Kaderisasi Masjid Salman ITB')
           .subject('Reset kata sandi akun Kaderisasi Masjid Salman ITB')
           .htmlView('emails/reset_password', { resetUrl })
