@@ -224,20 +224,49 @@ export default class AuthController {
     const token: string = request.qs().token
     try {
       const { password } = await resetPasswordValidator.validate(request.all())
-      const decrypted = encryption.decrypt(token)
+      const decrypted = encryption.decrypt<string>(token)
       const user = await PublicUser.findBy('email', decrypted)
+      const userLegacy = await LegacyMember.findBy('email', decrypted)
 
-      if (!user) {
+      if (!user && !userLegacy) {
         return response.unauthorized({
           message: 'INVALID_TOKEN',
         })
       }
 
-      await user.merge({ password: password }).save()
+      if (user) {
+        await user.merge({ password: password }).save()
+        return response.ok({
+          message: 'RESET_PASSWORD_SUCCESS',
+        })
+      }
 
-      return response.ok({
-        message: 'RESET_PASSWORD_SUCCESS',
-      })
+      if (userLegacy) {
+        await database.transaction(async (trx) => {
+          const user = new PublicUser()
+          user.email = decrypted || userLegacy.email
+          user.password = password
+
+          user.useTransaction(trx)
+          await user.save()
+
+          await user.related('profile').create({
+            name: userLegacy.name,
+            gender: userLegacy.gender,
+            whatsapp: userLegacy.phone,
+            line: userLegacy.line_id,
+            level: getLevel(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra),
+            // @ts-ignore
+            badges: JSON.stringify(
+              generateBadges(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra)
+            ),
+          })
+        })
+
+        return response.ok({
+          message: 'RESET_PASSWORD_SUCCESS',
+        })
+      }
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
