@@ -41,7 +41,7 @@ export default class ActivitiesController {
   async show({ params, response }: HttpContext) {
     try {
       const slug: number = params.slug
-      var activityData = await Activity.query().where({ is_published: 1, slug: slug }).firstOrFail()
+      var activityData = await Activity.query().where({ slug: slug }).firstOrFail()
 
       return response.ok({
         message: 'GET_DATA_SUCCESS',
