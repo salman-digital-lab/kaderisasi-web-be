@@ -5,6 +5,7 @@ const AuthController = () => import('#controllers/auth_controller')
 const ProfilesController = () => import('#controllers/profiles_controller')
 const ActivitiesController = () => import('#controllers/activities_controller')
 const RuangCurhatsController = () => import('#controllers/ruang_curhats_controller')
+const LeaderboardsController = () => import('#controllers/leaderboards_controller')
 
 router
   .group(() => {
@@ -49,6 +50,15 @@ router
         router.get('', [RuangCurhatsController, 'history'])
       })
       .prefix('ruang-curhat')
+      .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.post('', [LeaderboardsController, 'store'])
+        router.get('monthly', [LeaderboardsController, 'monthly'])
+        router.get('lifetime', [LeaderboardsController, 'lifetime'])
+      })
+      .prefix('achievements')
       .use(middleware.auth())
   })
   .prefix('v2')
