@@ -54,12 +54,11 @@ router
 
     router
       .group(() => {
-        router.post('', [LeaderboardsController, 'store'])
+        router.post('', [LeaderboardsController, 'store']).use(middleware.auth())
         router.get('monthly', [LeaderboardsController, 'monthly'])
         router.get('lifetime', [LeaderboardsController, 'lifetime'])
       })
       .prefix('achievements')
-      .use(middleware.auth())
   })
   .prefix('v2')
 

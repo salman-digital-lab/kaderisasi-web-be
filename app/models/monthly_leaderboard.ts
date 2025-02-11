@@ -22,6 +22,8 @@ export default class MonthlyLeaderboard extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @belongsTo(() => PublicUser)
+  @belongsTo(() => PublicUser, {
+    foreignKey: 'userId',
+  })
   declare user: BelongsTo<typeof PublicUser>
 }
