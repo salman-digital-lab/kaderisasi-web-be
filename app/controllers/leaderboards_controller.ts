@@ -14,8 +14,8 @@ export default class LeaderboardsController {
   async store({ request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
     try {
-      const data = await achievementValidator.validate(request.all())
-      
+      const data = await request.validateUsing(achievementValidator)
+
       const proof = data.proof
       if (!proof.isValid) {
         return response.badRequest({
@@ -35,7 +35,7 @@ export default class LeaderboardsController {
           Key: fileName,
           Body: fileBuffer,
           ContentType: proof.type || 'application/octet-stream',
-          ACL: 'public-read'
+          ACL: 'public-read',
         })
       )
 

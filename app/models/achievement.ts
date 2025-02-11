@@ -17,6 +17,9 @@ export default class Achievement extends BaseModel {
   @column()
   declare description: string
 
+  @column.date()
+  declare achievementDate: DateTime
+
   @column()
   declare type: number
 
@@ -41,9 +44,13 @@ export default class Achievement extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @belongsTo(() => PublicUser)
+  @belongsTo(() => PublicUser, {
+    foreignKey: 'userId',
+  })
   declare user: BelongsTo<typeof PublicUser>
 
-  @belongsTo(() => AdminUser)
+  @belongsTo(() => AdminUser, {
+    foreignKey: 'approverId',
+  })
   declare approver: BelongsTo<typeof AdminUser>
 }
