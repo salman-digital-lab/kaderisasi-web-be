@@ -39,10 +39,12 @@ export default class LeaderboardsController {
         })
       )
 
+      console.log(data.achievement_date)
       const achievement = await Achievement.create({
         userId: user.id,
         name: data.name,
         description: data.description,
+        achievementDate: DateTime.fromISO(data.achievement_date),
         type: data.type,
         score: 0, // Will be set by admin during approval
         proof: fileName,
