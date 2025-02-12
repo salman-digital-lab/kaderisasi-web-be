@@ -57,6 +57,7 @@ router
         router.post('', [LeaderboardsController, 'store']).use(middleware.auth())
         router.get('monthly', [LeaderboardsController, 'monthly'])
         router.get('lifetime', [LeaderboardsController, 'lifetime'])
+        router.get('', [LeaderboardsController, 'myAchievements']).use(middleware.auth())
       })
       .prefix('achievements')
   })

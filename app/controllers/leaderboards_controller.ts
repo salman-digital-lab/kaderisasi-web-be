@@ -119,4 +119,27 @@ export default class LeaderboardsController {
       })
     }
   }
+
+  async myAchievements({ request, response, auth }: HttpContext) {
+    try {
+      const user = auth.getUserOrFail()
+      const page = request.qs().page ?? 1
+      const perPage = request.qs().per_page ?? 10
+
+      const achievements = await Achievement.query()
+        .where('userId', user.id)
+        .orderBy('achievementDate', 'desc')
+        .paginate(page, perPage)
+
+      return response.ok({
+        message: 'GET_DATA_SUCCESS',
+        data: achievements,
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
 }

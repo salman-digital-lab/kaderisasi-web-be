@@ -33,6 +33,9 @@ export default class Achievement extends BaseModel {
   declare status: number
 
   @column()
+  declare remark: string | null
+
+  @column()
   declare approverId: number | null
 
   @column.date()
