@@ -1,8 +1,8 @@
 import { HttpContext } from '@adonisjs/core/http'
 import Achievement from '#models/achievement'
 import { errors } from '@vinejs/vine'
-import { achievementValidator } from '#validators/achievement_validator'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { achievementValidator, updateAchievementValidator } from '#validators/achievement_validator'
+import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { minioClient } from '#config/drive'
 import fs from 'node:fs'
 import env from '#start/env'
@@ -39,7 +39,6 @@ export default class LeaderboardsController {
         })
       )
 
-      console.log(data.achievement_date)
       const achievement = await Achievement.create({
         userId: user.id,
         name: data.name,
@@ -136,6 +135,90 @@ export default class LeaderboardsController {
         data: achievements,
       })
     } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
+  async update({ request, response, auth, params }: HttpContext) {
+    const user = auth.getUserOrFail()
+    try {
+      const achievement = await Achievement.query()
+        .where('id', params.id)
+        .where('userId', user.id)
+        .where('status', 0) // Only allow updates for pending achievements
+        .firstOrFail()
+
+      const data = await request.validateUsing(updateAchievementValidator)
+      const updateData: any = {}
+
+      if (data.name) updateData.name = data.name
+      if (data.description) updateData.description = data.description
+      if (data.achievement_date) updateData.achievementDate = DateTime.fromISO(data.achievement_date)
+      if (data.type) updateData.type = data.type
+
+      // Handle file upload if new proof is provided
+      if (data.proof) {
+        const proof = data.proof
+        if (!proof.isValid) {
+          return response.badRequest({
+            message: 'INVALID_FILE',
+            error: proof.errors,
+          })
+        }
+
+        // Delete old file if exists
+        if (achievement.proof) {
+          try {
+            await minioClient.send(
+              new DeleteObjectCommand({
+                Bucket: env.get('DRIVE_BUCKET'),
+                Key: achievement.proof,
+              })
+            )
+          } catch (error) {
+            console.error('Error deleting old file:', error)
+          }
+        }
+
+        // Generate unique filename
+        const fileName = `achievements/${user.id}_${Date.now()}.${proof.extname}`
+
+        // Upload to MinIO
+        const fileBuffer = fs.readFileSync(proof.tmpPath!)
+        await minioClient.send(
+          new PutObjectCommand({
+            Bucket: env.get('DRIVE_BUCKET'),
+            Key: fileName,
+            Body: fileBuffer,
+            ContentType: proof.type || 'application/octet-stream',
+            ACL: 'public-read',
+          })
+        )
+
+        updateData.proof = fileName
+      }
+
+      const updatedAchievement = await achievement.merge(updateData).save()
+
+      return response.ok({
+        message: 'UPDATE_DATA_SUCCESS',
+        data: updatedAchievement,
+      })
+    } catch (error) {
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.notFound({
+          message: 'ACHIEVEMENT_NOT_FOUND',
+        })
+      }
+      if (error instanceof errors.E_VALIDATION_ERROR) {
+        return response.badRequest({
+          message: error.messages[0]?.message || 'VALIDATION_ERROR',
+          error: error.messages,
+        })
+      }
       return response.internalServerError({
         message: 'GENERAL_ERROR',
         error: error.message,

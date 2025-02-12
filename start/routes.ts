@@ -55,6 +55,7 @@ router
     router
       .group(() => {
         router.post('', [LeaderboardsController, 'store']).use(middleware.auth())
+        router.put('/:id', [LeaderboardsController, 'update']).use(middleware.auth())
         router.get('monthly', [LeaderboardsController, 'monthly'])
         router.get('lifetime', [LeaderboardsController, 'lifetime'])
         router.get('', [LeaderboardsController, 'myAchievements']).use(middleware.auth())
