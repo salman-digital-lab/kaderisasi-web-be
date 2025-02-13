@@ -148,12 +148,12 @@ export default class LeaderboardsController {
       const achievement = await Achievement.query()
         .where('id', params.id)
         .where('userId', user.id)
-        .where('status', 0) // Only allow updates for pending achievements
         .firstOrFail()
 
       const data = await request.validateUsing(updateAchievementValidator)
       const updateData: any = {}
 
+      updateData.status = 0
       if (data.name) updateData.name = data.name
       if (data.description) updateData.description = data.description
       if (data.achievement_date) updateData.achievementDate = DateTime.fromISO(data.achievement_date)
