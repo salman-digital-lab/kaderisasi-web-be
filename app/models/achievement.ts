@@ -30,6 +30,8 @@ export default class Achievement extends BaseModel {
   declare proof: string
 
   @column()
+  declare isProofDeleted: boolean
+  @column()
   declare status: number
 
   @column()
