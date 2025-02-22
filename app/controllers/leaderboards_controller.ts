@@ -34,7 +34,7 @@ export default class LeaderboardsController {
           Bucket: env.get('DRIVE_BUCKET'),
           Key: fileName,
           Body: fileBuffer,
-          ContentType: proof.type || 'application/octet-stream',
+          ContentType: proof?.headers?.['content-type'] || 'application/octet-stream',
           ACL: 'public-read',
         })
       )
@@ -156,7 +156,8 @@ export default class LeaderboardsController {
       updateData.status = 0
       if (data.name) updateData.name = data.name
       if (data.description) updateData.description = data.description
-      if (data.achievement_date) updateData.achievementDate = DateTime.fromISO(data.achievement_date)
+      if (data.achievement_date)
+        updateData.achievementDate = DateTime.fromISO(data.achievement_date)
       if (data.type) updateData.type = data.type
 
       // Handle file upload if new proof is provided

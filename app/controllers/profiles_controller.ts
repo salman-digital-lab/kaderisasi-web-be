@@ -121,6 +121,8 @@ export default class ProfilesController {
       // Generate unique filename
       const fileName = `${user.id}_${Date.now()}.${picture.extname}`
 
+      console.log(fileName, picture.headers['content-type'], picture)
+
       // Upload to MinIO
       const fileBuffer = fs.readFileSync(picture.tmpPath!)
       await minioClient.send(
@@ -128,8 +130,8 @@ export default class ProfilesController {
           Bucket: env.get('DRIVE_BUCKET'),
           Key: fileName,
           Body: fileBuffer,
-          ContentType: picture.type || 'application/octet-stream',
-          ACL: 'public-read'
+          ContentType: picture?.headers?.['content-type'] || 'application/octet-stream',
+          ACL: 'public-read',
         })
       )
 
