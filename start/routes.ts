@@ -6,6 +6,7 @@ const ProfilesController = () => import('#controllers/profiles_controller')
 const ActivitiesController = () => import('#controllers/activities_controller')
 const RuangCurhatsController = () => import('#controllers/ruang_curhats_controller')
 const LeaderboardsController = () => import('#controllers/leaderboards_controller')
+const ClubsController = () => import('#controllers/clubs_controller')
 
 router
   .group(() => {
@@ -61,6 +62,13 @@ router
         router.get('', [LeaderboardsController, 'myAchievements']).use(middleware.auth())
       })
       .prefix('achievements')
+
+    router
+      .group(() => {
+        router.get('/:id', [ClubsController, 'show'])
+        router.get('', [ClubsController, 'index'])
+      })
+      .prefix('clubs')
   })
   .prefix('v2')
 
