@@ -89,10 +89,6 @@ export default class ActivitiesController {
     const slug: string = params.slug
     try {
       const activity = await Activity.findByOrFail('slug', slug)
-      console.log({
-        user_id: id,
-        activity_id: activity.id,
-      })
       const registrationData = await ActivityRegistration.query()
         .where({
           user_id: id,
@@ -120,7 +116,6 @@ export default class ActivitiesController {
 
   async register({ params, request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-    console.log(1)
     try {
       const data = await activityRegistrationValidator.validate(request.all())
 

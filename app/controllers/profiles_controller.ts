@@ -121,7 +121,6 @@ export default class ProfilesController {
       // Generate unique filename
       const fileName = `${user.id}_${Date.now()}.${picture.extname}`
 
-      console.log(fileName, picture.headers['content-type'], picture)
 
       // Upload to MinIO
       const fileBuffer = fs.readFileSync(picture.tmpPath!)

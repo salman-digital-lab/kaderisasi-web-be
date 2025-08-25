@@ -22,6 +22,9 @@ export default class Club extends BaseModel {
   declare description: string
 
   @column()
+  declare shortDescription: string | null
+
+  @column()
   declare logo: string
 
   @column()
