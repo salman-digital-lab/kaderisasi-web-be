@@ -7,6 +7,7 @@ const ActivitiesController = () => import('#controllers/activities_controller')
 const RuangCurhatsController = () => import('#controllers/ruang_curhats_controller')
 const LeaderboardsController = () => import('#controllers/leaderboards_controller')
 const ClubsController = () => import('#controllers/clubs_controller')
+const ClubRegistrationsController = () => import('#controllers/club_registrations_controller')
 
 router
   .group(() => {
@@ -67,8 +68,19 @@ router
       .group(() => {
         router.get('/:id', [ClubsController, 'show'])
         router.get('', [ClubsController, 'index'])
+        router.post('/:id/register', [ClubRegistrationsController, 'register']).use(middleware.auth())
+        router.get('/:id/registration-status', [ClubRegistrationsController, 'checkRegistration']).use(middleware.auth())
+        router.put('/:id/registration', [ClubRegistrationsController, 'updateRegistration']).use(middleware.auth())
+        router.delete('/:id/registration', [ClubRegistrationsController, 'cancelRegistration']).use(middleware.auth())
       })
       .prefix('clubs')
+
+    router
+      .group(() => {
+        router.get('my-registrations', [ClubRegistrationsController, 'myRegistrations'])
+      })
+      .prefix('club-registrations')
+      .use(middleware.auth())
   })
   .prefix('v2')
 
