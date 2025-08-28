@@ -1,7 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http'
 import ClubRegistration from '#models/club_registration'
 import Club from '#models/club'
-import Profile from '#models/profile'
 import {
   clubRegistrationValidator,
   updateClubRegistrationValidator,
@@ -20,7 +19,6 @@ export default class ClubRegistrationsController {
       const club = await Club.findOrFail(clubId)
       
       // Get user profile
-      const userProfile = await Profile.findByOrFail('user_id', user.id)
 
       // Check if already registered
       const existingRegistration = await ClubRegistration.query()
