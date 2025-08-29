@@ -8,6 +8,7 @@ const RuangCurhatsController = () => import('#controllers/ruang_curhats_controll
 const LeaderboardsController = () => import('#controllers/leaderboards_controller')
 const ClubsController = () => import('#controllers/clubs_controller')
 const ClubRegistrationsController = () => import('#controllers/club_registrations_controller')
+const CustomFormsController = () => import('#controllers/custom_forms_controller')
 
 router
   .group(() => {
@@ -81,6 +82,13 @@ router
       })
       .prefix('club-registrations')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.get('by-feature', [CustomFormsController, 'getByFeature'])
+        router.post('register', [CustomFormsController, 'register']).use(middleware.auth())
+      })
+      .prefix('custom-forms')
   })
   .prefix('v2')
 
