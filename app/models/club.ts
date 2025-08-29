@@ -52,6 +52,12 @@ export default class Club extends BaseModel {
   declare endPeriod: DateTime | null
 
   @column()
+  declare isRegistrationOpen: boolean
+
+  @column.date()
+  declare registrationEndDate: DateTime | null
+
+  @column()
   declare isShow: boolean
 
   @column.dateTime({ autoCreate: true })

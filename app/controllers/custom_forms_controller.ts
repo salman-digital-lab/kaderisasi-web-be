@@ -17,7 +17,6 @@ export default class CustomFormsController {
       const customForm = await CustomForm.query()
         .where('feature_type', featureType)
         .where('feature_id', featureId)
-        .where('is_active', true)
         .first()
 
       if (!customForm) {
@@ -80,7 +79,6 @@ export default class CustomFormsController {
           message: 'ACTIVITY_REGISTER_SUCCESS',
           data: registration,
         })
-
       } else if (feature_type === 'club_registration') {
         const ClubRegistration = (await import('#models/club_registration')).default
 
@@ -97,14 +95,12 @@ export default class CustomFormsController {
         }
 
         // Create new registration
+        // For club registration, only save custom_form_data, not profile_data
         const registration = await ClubRegistration.create({
           memberId: user.id,
           clubId: feature_id,
           status: 'PENDING',
-          additionalData: {
-            profile_data,
-            custom_form_data,
-          },
+          additionalData: custom_form_data,
         })
 
         return response.created({
