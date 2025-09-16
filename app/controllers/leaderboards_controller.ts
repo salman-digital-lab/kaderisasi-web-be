@@ -78,7 +78,9 @@ export default class LeaderboardsController {
       const leaderboard = await MonthlyLeaderboard.query()
         .where('month', monthDate.toSQLDate()!)
         .preload('user', (query) => {
-          query.preload('profile')
+          query.preload('profile', (profileQuery) => {
+            profileQuery.preload('university')
+          })
         })
         .orderBy('score', 'desc')
         .paginate(page, perPage)
@@ -102,7 +104,9 @@ export default class LeaderboardsController {
 
       const leaderboard = await LifetimeLeaderboard.query()
         .preload('user', (query) => {
-          query.preload('profile')
+          query.preload('profile', (profileQuery) => {
+            profileQuery.preload('university')
+          })
         })
         .orderBy('score', 'desc')
         .paginate(page, perPage)
