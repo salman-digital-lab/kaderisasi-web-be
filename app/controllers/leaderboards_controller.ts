@@ -119,6 +119,48 @@ export default class LeaderboardsController {
     }
   }
 
+  async myLifetimeRank({ response, auth }: HttpContext) {
+    try {
+      const user = auth.getUserOrFail()
+
+      // Get user's lifetime leaderboard entry
+      const userEntry = await LifetimeLeaderboard.query()
+        .where('userId', user.id)
+        .first()
+
+      if (!userEntry) {
+        return response.ok({
+          message: 'GET_DATA_SUCCESS',
+          data: {
+            rank: null,
+            score: 0,
+            message: 'User not found in leaderboard'
+          },
+        })
+      }
+
+      // Count how many users have higher scores
+      const rank = await LifetimeLeaderboard.query()
+        .where('score', '>', userEntry.score)
+        .count('* as total')
+
+      const userRank = parseInt(rank[0].$extras.total) + 1
+
+      return response.ok({
+        message: 'GET_DATA_SUCCESS',
+        data: {
+          rank: userRank,
+          score: userEntry.score,
+        },
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
   async myAchievements({ request, response, auth }: HttpContext) {
     try {
       const user = auth.getUserOrFail()

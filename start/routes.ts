@@ -61,6 +61,7 @@ router
         router.put('/:id', [LeaderboardsController, 'update']).use(middleware.auth())
         router.get('monthly', [LeaderboardsController, 'monthly'])
         router.get('lifetime', [LeaderboardsController, 'lifetime'])
+        router.get('my-rank', [LeaderboardsController, 'myLifetimeRank']).use(middleware.auth())
         router.get('', [LeaderboardsController, 'myAchievements']).use(middleware.auth())
       })
       .prefix('achievements')
