@@ -12,10 +12,10 @@ export default class CustomForm extends BaseModel {
   declare formDescription: string | null
 
   @column()
-  declare featureType: 'activity_registration' | 'club_registration'
+  declare featureType: 'activity_registration' | 'club_registration' | 'independent_form'
 
   @column()
-  declare featureId: number
+  declare featureId: number | null
 
   @column()
   declare formSchema: object

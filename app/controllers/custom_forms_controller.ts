@@ -7,17 +7,40 @@ export default class CustomFormsController {
       const featureType = request.qs().feature_type
       const featureId = request.qs().feature_id
 
-      if (!featureType || !featureId) {
+      if (!featureType) {
         return response.badRequest({
-          message: 'FEATURE_TYPE_AND_ID_REQUIRED',
+          message: 'FEATURE_TYPE_REQUIRED',
         })
       }
 
-      // Query database directly
-      const customForm = await CustomForm.query()
-        .where('feature_type', featureType)
-        .where('feature_id', featureId)
-        .first()
+      let customForm: CustomForm | null = null
+
+      if (featureType === 'independent_form') {
+        // For independent forms, we need to get by ID instead of feature_id
+        // Feature_id in this case will be the custom form's ID
+        if (!featureId) {
+          return response.badRequest({
+            message: 'FORM_ID_REQUIRED',
+          })
+        }
+        
+        customForm = await CustomForm.query()
+          .where('id', featureId)
+          .where('feature_type', 'independent_form')
+          .first()
+      } else {
+        // For activity_registration and club_registration
+        if (!featureId) {
+          return response.badRequest({
+            message: 'FEATURE_ID_REQUIRED',
+          })
+        }
+        
+        customForm = await CustomForm.query()
+          .where('feature_type', featureType)
+          .where('feature_id', featureId)
+          .first()
+      }
 
       if (!customForm) {
         return response.notFound({
@@ -39,11 +62,21 @@ export default class CustomFormsController {
 
   async register({ request, response, auth }: HttpContext) {
     try {
-      const { feature_type, feature_id, profile_data, custom_form_data } = request.body()
+      const { feature_type, feature_id, custom_form_data } = request.body()
 
-      if (!feature_type || !feature_id) {
+      if (!feature_type) {
         return response.badRequest({
-          message: 'FEATURE_TYPE_AND_ID_REQUIRED',
+          message: 'FEATURE_TYPE_REQUIRED',
+        })
+      }
+
+      // For activity_registration and club_registration, feature_id is required
+      if (
+        (feature_type === 'activity_registration' || feature_type === 'club_registration') &&
+        !feature_id
+      ) {
+        return response.badRequest({
+          message: 'FEATURE_ID_REQUIRED',
         })
       }
 
@@ -65,14 +98,12 @@ export default class CustomFormsController {
         }
 
         // Create new registration
+        // Profile data is already saved separately, only save custom form data
         const registration = await ActivityRegistration.create({
           userId: user.id,
           activityId: feature_id,
           status: 'TERDAFTAR',
-          questionnaireAnswer: {
-            profile_data,
-            custom_form_data,
-          },
+          questionnaireAnswer: custom_form_data,
         })
 
         return response.created({
@@ -95,7 +126,7 @@ export default class CustomFormsController {
         }
 
         // Create new registration
-        // For club registration, only save custom_form_data, not profile_data
+        // Profile data is already saved separately, only save custom form data
         const registration = await ClubRegistration.create({
           memberId: user.id,
           clubId: feature_id,
@@ -106,6 +137,15 @@ export default class CustomFormsController {
         return response.created({
           message: 'CLUB_REGISTER_SUCCESS',
           data: registration,
+        })
+      } else if (feature_type === 'independent_form') {
+        // For independent_form, just return success without saving to database
+        return response.ok({
+          message: 'INDEPENDENT_FORM_SUBMIT_SUCCESS',
+          data: {
+            submitted_at: new Date().toISOString(),
+            user_id: user.id,
+          },
         })
       } else {
         return response.badRequest({
