@@ -3,15 +3,12 @@ import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import PublicUser from '#models/public_user'
 
-export default class MonthlyLeaderboard extends BaseModel {
+export default class LifetimeLeaderboard extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
   @column()
   declare userId: number
-
-  @column.date()
-  declare month: DateTime
 
   @column()
   declare score: number
