@@ -6,11 +6,17 @@ type PersonalQuestionnaire = {
   required: boolean
 }
 
+type StatusVisibility = {
+  is_visible: boolean
+  visible_at?: string // ISO datetime when status becomes visible
+}
+
 type AdditionalConfig = {
   custom_selection_status: string[]
   mandatory_profile_data: PersonalQuestionnaire[]
   additional_questionnaire: Questionnaire[]
   images: string[]
+  status_visibility?: StatusVisibility
 }
 
 type Questionnaire =

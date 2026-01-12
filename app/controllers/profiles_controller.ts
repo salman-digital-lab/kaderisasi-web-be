@@ -65,11 +65,32 @@ export default class ProfilesController {
     try {
       const user = auth.getUserOrFail()
       const id = user.id
-      let activities = {}
-      activities = await ActivityRegistration.query()
+      const registrations = await ActivityRegistration.query()
         .select('*')
         .where('user_id', id)
         .preload('activity')
+
+      // Check status visibility for each registration
+      const now = new Date()
+      const activities = registrations.map((registration) => {
+        const statusVisibility = registration.activity?.additionalConfig?.status_visibility
+
+        // If visibility is explicitly set to false and visible_at is in the future
+        if (statusVisibility && statusVisibility.is_visible === false) {
+          const visibleAt = statusVisibility.visible_at
+            ? new Date(statusVisibility.visible_at)
+            : null
+          if (!visibleAt || now < visibleAt) {
+            return {
+              ...registration.serialize(),
+              status: 'BELUM DIUMUMKAN',
+              visible_at: statusVisibility.visible_at || null,
+            }
+          }
+        }
+
+        return registration.serialize()
+      })
 
       return response.ok({
         message: 'GET_DATA_SUCCESS',
@@ -120,7 +141,6 @@ export default class ProfilesController {
 
       // Generate unique filename
       const fileName = `${user.id}_${Date.now()}.${picture.extname}`
-
 
       // Upload to MinIO
       const fileBuffer = fs.readFileSync(picture.tmpPath!)

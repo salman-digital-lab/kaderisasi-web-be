@@ -60,7 +60,7 @@ export default class ActivitiesController {
     const slug: string = params.slug
     try {
       const activity = await Activity.findByOrFail('slug', slug)
-      const registration: { status: string } = { status: 'BELUM TERDAFTAR' }
+      const registration: { status: string; visible_at?: string } = { status: 'BELUM TERDAFTAR' }
       const isRegistered = await ActivityRegistration.query()
         .where({
           user_id: id,
@@ -69,7 +69,28 @@ export default class ActivitiesController {
         .first()
 
       if (isRegistered) {
-        registration.status = isRegistered.status
+        // Check status visibility settings
+        const statusVisibility = activity.additionalConfig?.status_visibility
+        const now = new Date()
+
+        // If visibility is explicitly set to false and visible_at is in the future
+        if (statusVisibility && statusVisibility.is_visible === false) {
+          const visibleAt = statusVisibility.visible_at
+            ? new Date(statusVisibility.visible_at)
+            : null
+          if (!visibleAt || now < visibleAt) {
+            registration.status = 'BELUM DIUMUMKAN'
+            if (visibleAt) {
+              registration.visible_at = statusVisibility.visible_at
+            }
+          } else {
+            // Time has passed, show actual status
+            registration.status = isRegistered.status
+          }
+        } else {
+          // Default behavior: show status (backward compatible)
+          registration.status = isRegistered.status
+        }
       }
 
       return response.ok({
