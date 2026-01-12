@@ -84,6 +84,9 @@ export default class Profile extends BaseModel {
   @column()
   declare level: number
 
+  @column()
+  declare birthDate: Date | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
