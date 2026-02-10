@@ -82,6 +82,9 @@ export default class Activity extends BaseModel {
   @column()
   declare isPublished: boolean
 
+  @column()
+  declare isRegistrationOpen: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
