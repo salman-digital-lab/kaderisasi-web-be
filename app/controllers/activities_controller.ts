@@ -38,6 +38,27 @@ export default class ActivitiesController {
     }
   }
 
+  async categories({ response }: HttpContext) {
+    try {
+      const categories = await Activity.query()
+        .select('activity_category')
+        .where('is_published', true)
+        .distinct('activity_category')
+
+      const categoryIds = categories.map((c) => c.activityCategory)
+
+      return response.ok({
+        message: 'GET_DATA_SUCCESS',
+        data: categoryIds,
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
   async show({ params, response }: HttpContext) {
     try {
       const slug: number = params.slug

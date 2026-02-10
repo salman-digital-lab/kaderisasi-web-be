@@ -35,6 +35,7 @@ router
 
     router
       .group(() => {
+        router.get('categories', [ActivitiesController, 'categories'])
         router.post(':slug/register/', [ActivitiesController, 'register']).use(middleware.auth())
         router
           .put(':slug/registration', [ActivitiesController, 'questionnaireEdit'])
@@ -70,10 +71,18 @@ router
       .group(() => {
         router.get('/:id', [ClubsController, 'show'])
         router.get('', [ClubsController, 'index'])
-        router.post('/:id/register', [ClubRegistrationsController, 'register']).use(middleware.auth())
-        router.get('/:id/registration-status', [ClubRegistrationsController, 'checkRegistration']).use(middleware.auth())
-        router.put('/:id/registration', [ClubRegistrationsController, 'updateRegistration']).use(middleware.auth())
-        router.delete('/:id/registration', [ClubRegistrationsController, 'cancelRegistration']).use(middleware.auth())
+        router
+          .post('/:id/register', [ClubRegistrationsController, 'register'])
+          .use(middleware.auth())
+        router
+          .get('/:id/registration-status', [ClubRegistrationsController, 'checkRegistration'])
+          .use(middleware.auth())
+        router
+          .put('/:id/registration', [ClubRegistrationsController, 'updateRegistration'])
+          .use(middleware.auth())
+        router
+          .delete('/:id/registration', [ClubRegistrationsController, 'cancelRegistration'])
+          .use(middleware.auth())
       })
       .prefix('clubs')
 
