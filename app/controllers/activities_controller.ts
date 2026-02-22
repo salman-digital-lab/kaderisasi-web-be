@@ -81,7 +81,9 @@ export default class ActivitiesController {
     const slug: string = params.slug
     try {
       const activity = await Activity.findByOrFail('slug', slug)
-      const registration: { status: string; visible_at?: string } = { status: 'BELUM TERDAFTAR' }
+      const registration: { status: string; visible_at?: string; registration_id?: number } = {
+        status: 'BELUM TERDAFTAR',
+      }
       const isRegistered = await ActivityRegistration.query()
         .where({
           user_id: id,
@@ -107,10 +109,12 @@ export default class ActivitiesController {
           } else {
             // Time has passed, show actual status
             registration.status = isRegistered.status
+            registration.registration_id = isRegistered.id
           }
         } else {
           // Default behavior: show status (backward compatible)
           registration.status = isRegistered.status
+          registration.registration_id = isRegistered.id
         }
       }
 

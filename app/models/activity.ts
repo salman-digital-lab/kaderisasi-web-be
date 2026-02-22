@@ -17,6 +17,7 @@ type AdditionalConfig = {
   additional_questionnaire: Questionnaire[]
   images: string[]
   status_visibility?: StatusVisibility
+  certificate_template_id?: number
 }
 
 type Questionnaire =

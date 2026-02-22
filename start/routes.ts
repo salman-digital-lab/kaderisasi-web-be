@@ -9,6 +9,7 @@ const LeaderboardsController = () => import('#controllers/leaderboards_controlle
 const ClubsController = () => import('#controllers/clubs_controller')
 const ClubRegistrationsController = () => import('#controllers/club_registrations_controller')
 const CustomFormsController = () => import('#controllers/custom_forms_controller')
+const CertificatesController = () => import('#controllers/certificates_controller')
 
 router
   .group(() => {
@@ -99,6 +100,17 @@ router
         router.post('register', [CustomFormsController, 'register']).use(middleware.auth())
       })
       .prefix('custom-forms')
+
+    router
+      .group(() => {
+        // Public — view certificate without login
+        router.get('/:id', [CertificatesController, 'show'])
+        // Authenticated — verify ownership before download
+        router
+          .post('/:id/download', [CertificatesController, 'generateSingle'])
+          .use(middleware.auth())
+      })
+      .prefix('certificates')
   })
   .prefix('v2')
 
