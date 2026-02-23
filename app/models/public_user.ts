@@ -18,6 +18,9 @@ export default class PublicUser extends compose(BaseModel, AuthFinder) {
   @column()
   declare email: string
 
+  @column()
+  declare memberId: string | null
+
   @column({ serializeAs: null })
   declare password: string
 

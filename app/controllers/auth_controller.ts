@@ -10,6 +10,7 @@ import {
   resetPasswordValidator,
 } from '#validators/auth_validator'
 import PublicUser from '#models/public_user'
+import { generateMemberId } from '#helpers/member_id_generator'
 import Profile from '#models/profile'
 import env from '#start/env'
 import { errors } from '@vinejs/vine'
@@ -71,6 +72,9 @@ export default class AuthController {
         user.password = payload.password
 
         user.useTransaction(trx)
+        await user.save()
+
+        user.memberId = generateMemberId(user.id)
         await user.save()
 
         // @ts-ignore cannot find a solution, it is error when using this monorepo
@@ -141,6 +145,9 @@ export default class AuthController {
           user.password = payload.password
 
           user.useTransaction(trx)
+          await user.save()
+
+          user.memberId = generateMemberId(user.id)
           await user.save()
 
           // @ts-ignore cannot find a solution, it is error when using this monorepo
@@ -249,6 +256,9 @@ export default class AuthController {
           user.password = password
 
           user.useTransaction(trx)
+          await user.save()
+
+          user.memberId = generateMemberId(user.id)
           await user.save()
 
           await user.related('profile').create({
