@@ -10,7 +10,7 @@ import {
   resetPasswordValidator,
 } from '#validators/auth_validator'
 import PublicUser from '#models/public_user'
-import { generateMemberId } from '#helpers/member_id_generator'
+import { generateMemberId } from '../helpers/member_id_generator.js'
 import Profile from '#models/profile'
 import env from '#start/env'
 import { errors } from '@vinejs/vine'
