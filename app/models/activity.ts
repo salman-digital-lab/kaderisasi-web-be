@@ -18,6 +18,7 @@ type AdditionalConfig = {
   images: string[]
   status_visibility?: StatusVisibility
   certificate_template_id?: number
+  allow_guest_registration?: boolean
 }
 
 type Questionnaire =

@@ -1,9 +1,15 @@
 import { HttpContext } from '@adonisjs/core/http'
 import Activity from '#models/activity'
-import { activityRegistrationValidator } from '#validators/activity_validator'
+import {
+  activityRegistrationValidator,
+  guestActivityRegistrationValidator,
+} from '#validators/activity_validator'
 import ActivityRegistration from '#models/activity_registration'
 import Profile from '#models/profile'
 import { errors } from '@vinejs/vine'
+
+// Matches ACTIVITY_TYPE_ENUM.REGISTRATION_ONLY from the shared type constants
+const ACTIVITY_TYPE_REGISTRATION_ONLY = 1
 
 export default class ActivitiesController {
   async index({ request, response }: HttpContext) {
@@ -190,6 +196,49 @@ export default class ActivitiesController {
         userId: user.id,
         activityId: activity.id,
         status: 'TERDAFTAR',
+        questionnaireAnswer: data.questionnaire_answer,
+      })
+
+      return response.ok({
+        message: 'ACTIVITY_REGISTER_SUCCESS',
+        data: registration,
+      })
+    } catch (error) {
+      if (error instanceof errors.E_VALIDATION_ERROR) {
+        return response.internalServerError({
+          message: error.messages[0]?.message || 'GENERAL_ERROR',
+          error: error.messages,
+        })
+      }
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
+  async guestRegister({ params, request, response }: HttpContext) {
+    try {
+      const data = await guestActivityRegistrationValidator.validate(request.all())
+      const activity = await Activity.findByOrFail('slug', params.slug)
+
+      const guestRegistrationAllowed =
+        activity.activityType === ACTIVITY_TYPE_REGISTRATION_ONLY &&
+        activity.additionalConfig?.allow_guest_registration
+
+      if (!guestRegistrationAllowed) {
+        return response.forbidden({ message: 'GUEST_REGISTRATION_NOT_ALLOWED' })
+      }
+
+      if (!activity.isRegistrationOpen) {
+        return response.forbidden({ message: 'REGISTRATION_CLOSED' })
+      }
+
+      const registration = await ActivityRegistration.create({
+        userId: null,
+        activityId: activity.id,
+        status: 'TERDAFTAR',
+        guestData: data.guest_data,
         questionnaireAnswer: data.questionnaire_answer,
       })
 

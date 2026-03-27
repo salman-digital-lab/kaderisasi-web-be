@@ -38,6 +38,7 @@ router
       .group(() => {
         router.get('categories', [ActivitiesController, 'categories'])
         router.post(':slug/register/', [ActivitiesController, 'register']).use(middleware.auth())
+        router.post(':slug/guest-register', [ActivitiesController, 'guestRegister'])
         router
           .put(':slug/registration', [ActivitiesController, 'questionnaireEdit'])
           .use(middleware.auth())

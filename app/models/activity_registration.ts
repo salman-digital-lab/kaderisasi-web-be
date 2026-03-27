@@ -9,12 +9,15 @@ export default class ActivityRegistration extends BaseModel {
   declare id: number
 
   @column()
-  declare userId: number
+  declare userId: number | null
 
   @belongsTo(() => PublicUser, {
     foreignKey: 'userId',
   })
   declare publicUser: BelongsTo<typeof PublicUser>
+
+  @column()
+  declare guestData: Record<string, any> | null
 
   @column()
   declare activityId: number

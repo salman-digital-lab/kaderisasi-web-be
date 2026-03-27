@@ -4,7 +4,7 @@ import CertificateTemplate from '#models/certificate_template'
 
 export type CertificateParticipantData = {
   registration_id: number
-  user_id: number
+  user_id: number | null
   name: string
   email: string
   university: string
