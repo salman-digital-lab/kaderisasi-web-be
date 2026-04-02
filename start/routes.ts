@@ -10,6 +10,7 @@ const ClubsController = () => import('#controllers/clubs_controller')
 const ClubRegistrationsController = () => import('#controllers/club_registrations_controller')
 const CustomFormsController = () => import('#controllers/custom_forms_controller')
 const CertificatesController = () => import('#controllers/certificates_controller')
+const MembersController = () => import('#controllers/members_controller')
 
 router
   .group(() => {
@@ -33,6 +34,12 @@ router
       })
       .prefix('profiles')
       .use(middleware.auth())
+
+    router
+      .group(() => {
+        router.post('submit', [MembersController, 'submit'])
+      })
+      .prefix('members')
 
     router
       .group(() => {

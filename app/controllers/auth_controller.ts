@@ -70,6 +70,7 @@ export default class AuthController {
         const user = new PublicUser()
         user.email = payload.email
         user.password = payload.password
+        user.accountStatus = 'active'
 
         user.useTransaction(trx)
         await user.save()
@@ -143,6 +144,7 @@ export default class AuthController {
           const user = new PublicUser()
           user.email = payload.email
           user.password = payload.password
+          user.accountStatus = 'active'
 
           user.useTransaction(trx)
           await user.save()
@@ -254,6 +256,7 @@ export default class AuthController {
           const user = new PublicUser()
           user.email = decrypted || userLegacy.email
           user.password = password
+          user.accountStatus = 'active'
 
           user.useTransaction(trx)
           await user.save()

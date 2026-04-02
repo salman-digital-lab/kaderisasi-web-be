@@ -6,6 +6,27 @@ import PublicUser from '#models/public_user'
 import City from '#models/city'
 import University from '#models/university'
 
+type EducationEntry = {
+  degree: 'bachelor' | 'master' | 'doctoral'
+  institution: string
+  major: string
+  intake_year: number
+}
+
+type WorkEntry = {
+  job: string
+  organization: string
+  role: string
+  description?: string
+}
+
+type ExtraData = {
+  preferred_name?: string
+  salman_activity_history?: string[]
+  current_activity_focus?: string[]
+  alumni_regional_assignment?: string[]
+}
+
 export default class Profile extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
@@ -86,6 +107,39 @@ export default class Profile extends BaseModel {
 
   @column()
   declare birthDate: Date | null
+
+  @column()
+  declare placeOfBirth: string | null
+
+  @column()
+  declare originProvinceId: number | null
+
+  @belongsTo(() => Province, { foreignKey: 'originProvinceId' })
+  declare originProvince: BelongsTo<typeof Province>
+
+  @column()
+  declare originCityId: number | null
+
+  @belongsTo(() => City, { foreignKey: 'originCityId' })
+  declare originCity: BelongsTo<typeof City>
+
+  @column()
+  declare country: string | null
+
+  @column({
+    prepare: (value) => (value != null ? JSON.stringify(value) : null),
+  })
+  declare educationHistory: EducationEntry[]
+
+  @column({
+    prepare: (value) => (value != null ? JSON.stringify(value) : null),
+  })
+  declare workHistory: WorkEntry[]
+
+  @column({
+    prepare: (value) => (value != null ? JSON.stringify(value) : null),
+  })
+  declare extraData: ExtraData
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -1,23 +1,18 @@
 import vine from '@vinejs/vine'
 
-export const updateProfileValidator = vine.compile(
+export const selfSubmitValidator = vine.compile(
   vine.object({
-    name: vine.string().optional(),
+    name: vine.string(),
     gender: vine.enum(['M', 'F']).optional(),
     whatsapp: vine.string().optional(),
-    line: vine.string().optional(),
     instagram: vine.string().optional(),
     province_id: vine.number().optional(),
     city_id: vine.number().optional(),
-    linkedin: vine.string().optional(),
-    personal_id: vine.string().optional(),
-    tiktok: vine.string().optional(),
-    birth_date: vine.string().optional(),
-
+    country: vine.string().optional(),
     place_of_birth: vine.string().optional(),
+    birth_date: vine.string().optional(),
     origin_province_id: vine.number().optional(),
     origin_city_id: vine.number().optional(),
-    country: vine.string().optional(),
     education_history: vine
       .array(
         vine.object({
@@ -47,17 +42,7 @@ export const updateProfileValidator = vine.compile(
             vine.enum(['professional', 'academic', 'social', 'entrepreneur', 'politics', 'other'])
           )
           .optional(),
-        // alumni_regional_assignment is NOT accepted here — admin/hub only
       })
       .optional(),
-  })
-)
-
-export const imageValidator = vine.compile(
-  vine.object({
-    file: vine.file({
-      size: '2mb',
-      extnames: ['jpg', 'png', 'jpeg', 'PNG', 'JPG', 'JPEG'],
-    }),
   })
 )

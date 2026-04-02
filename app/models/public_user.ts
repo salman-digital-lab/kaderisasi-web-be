@@ -16,13 +16,16 @@ export default class PublicUser extends compose(BaseModel, AuthFinder) {
   declare id: number
 
   @column()
-  declare email: string
+  declare email: string | null
 
   @column()
   declare memberId: string | null
 
   @column({ serializeAs: null })
-  declare password: string
+  declare password: string | null
+
+  @column()
+  declare accountStatus: string
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
