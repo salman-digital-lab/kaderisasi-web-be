@@ -24,9 +24,9 @@ export default class MembersController {
         // @ts-ignore cannot find a solution, it is error when using this monorepo
         await user.related('profile').create({
           name: payload.name,
-          gender: payload.gender ?? null,
-          whatsapp: payload.whatsapp ?? null,
-          instagram: payload.instagram ?? null,
+          gender: payload.gender ?? undefined,
+          whatsapp: payload.whatsapp ?? undefined,
+          instagram: payload.instagram ?? undefined,
           province_id: payload.province_id ?? null,
           city_id: payload.city_id ?? null,
           country: payload.country ?? null,

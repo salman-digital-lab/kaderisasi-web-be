@@ -117,7 +117,7 @@ export default class AuthController {
       }
 
       if (user) {
-        if (!(await hash.verify(user.password, password))) {
+        if (!user.password || !(await hash.verify(user.password, password))) {
           return response.unauthorized({
             message: 'WRONG_PASSWORD',
           })
