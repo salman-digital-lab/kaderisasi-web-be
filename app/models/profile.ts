@@ -14,10 +14,10 @@ type EducationEntry = {
 }
 
 type WorkEntry = {
-  job: string
-  organization: string
-  role: string
-  description?: string
+  job_title: string
+  company: string
+  start_year?: number
+  end_year?: number
 }
 
 type ExtraData = {

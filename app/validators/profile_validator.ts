@@ -30,10 +30,10 @@ export const updateProfileValidator = vine.compile(
     work_history: vine
       .array(
         vine.object({
-          job: vine.string(),
-          organization: vine.string(),
-          role: vine.string(),
-          description: vine.string().optional(),
+          job_title: vine.string(),
+          company: vine.string(),
+          start_year: vine.number().optional(),
+          end_year: vine.number().optional(),
         })
       )
       .optional(),
