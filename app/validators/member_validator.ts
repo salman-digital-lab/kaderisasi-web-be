@@ -9,7 +9,6 @@ export const selfSubmitValidator = vine.compile(
     province_id: vine.number().optional(),
     city_id: vine.number().optional(),
     country: vine.string().optional(),
-    place_of_birth: vine.string().optional(),
     birth_date: vine.string().optional(),
     origin_province_id: vine.number().optional(),
     origin_city_id: vine.number().optional(),

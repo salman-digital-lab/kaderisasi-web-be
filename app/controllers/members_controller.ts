@@ -30,7 +30,6 @@ export default class MembersController {
           provinceId: payload.province_id ?? undefined,
           cityId: payload.city_id ?? undefined,
           country: payload.country ?? undefined,
-          placeOfBirth: payload.place_of_birth ?? undefined,
           birthDate: payload.birth_date ? new Date(payload.birth_date) : undefined,
           originProvinceId: payload.origin_province_id ?? undefined,
           originCityId: payload.origin_city_id ?? undefined,

@@ -1,11 +1,7 @@
 import { HttpContext } from '@adonisjs/core/http'
 import Activity from '#models/activity'
-import {
-  activityRegistrationValidator,
-  guestActivityRegistrationValidator,
-} from '#validators/activity_validator'
+import { guestActivityRegistrationValidator } from '#validators/activity_validator'
 import ActivityRegistration from '#models/activity_registration'
-import Profile from '#models/profile'
 import { errors } from '@vinejs/vine'
 
 // Matches ACTIVITY_TYPE_ENUM.REGISTRATION_ONLY from the shared type constants
@@ -159,57 +155,6 @@ export default class ActivitiesController {
         data: registrationData,
       })
     } catch (error) {
-      return response.internalServerError({
-        message: 'GENERAL_ERROR',
-        error: error.message,
-      })
-    }
-  }
-
-  async register({ params, request, response, auth }: HttpContext) {
-    const user = auth.getUserOrFail()
-    try {
-      const data = await activityRegistrationValidator.validate(request.all())
-
-      const activitySlug: number = params.slug
-      const userData = await Profile.findByOrFail('user_id', user.id)
-
-      const activity = await Activity.findByOrFail('slug', activitySlug)
-
-      const registered = await ActivityRegistration.query().where({
-        user_id: user.id,
-        activity_id: activity.id,
-      })
-
-      if (registered && registered.length) {
-        return response.conflict({
-          message: 'ALREADY_REGISTERED',
-        })
-      }
-
-      if (userData.level < activity.minimumLevel) {
-        return response.forbidden({
-          message: 'UNMATCHED_LEVEL',
-        })
-      }
-      const registration = await ActivityRegistration.create({
-        userId: user.id,
-        activityId: activity.id,
-        status: 'TERDAFTAR',
-        questionnaireAnswer: data.questionnaire_answer,
-      })
-
-      return response.ok({
-        message: 'ACTIVITY_REGISTER_SUCCESS',
-        data: registration,
-      })
-    } catch (error) {
-      if (error instanceof errors.E_VALIDATION_ERROR) {
-        return response.internalServerError({
-          message: error.messages[0]?.message || 'GENERAL_ERROR',
-          error: error.messages,
-        })
-      }
       return response.internalServerError({
         message: 'GENERAL_ERROR',
         error: error.message,
