@@ -1,6 +1,9 @@
 import { HttpContext } from '@adonisjs/core/http'
 import Activity from '#models/activity'
-import { guestActivityRegistrationValidator } from '#validators/activity_validator'
+import {
+  activityRegistrationValidator,
+  guestActivityRegistrationValidator,
+} from '#validators/activity_validator'
 import ActivityRegistration from '#models/activity_registration'
 import { errors } from '@vinejs/vine'
 
