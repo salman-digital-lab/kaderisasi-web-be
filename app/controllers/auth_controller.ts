@@ -8,6 +8,7 @@ import {
   registerValidator,
   loginValidator,
   resetPasswordValidator,
+  checkEmailValidator,
 } from '#validators/auth_validator'
 import PublicUser from '#models/public_user'
 import { generateMemberId } from '../helpers/member_id_generator.js'
@@ -181,6 +182,33 @@ export default class AuthController {
           data: { user: newUserAfterLegacyMember, data, token },
         })
       }
+    } catch (error) {
+      if (error instanceof errors.E_VALIDATION_ERROR) {
+        return response.internalServerError({
+          message: error.messages[0]?.message || 'GENERAL_ERROR',
+          error: error.messages,
+        })
+      }
+      return response.internalServerError({
+        message: 'GENERAL_ERROR',
+        error: error.message,
+      })
+    }
+  }
+
+  async checkEmail({ request, response }: HttpContext) {
+    try {
+      const payload = await checkEmailValidator.validate(request.all())
+      const normalizedEmail = payload.email.toLowerCase()
+      const user = await PublicUser.findBy('email', normalizedEmail)
+      const legacyMember = await LegacyMember.findBy('email', normalizedEmail)
+
+      return response.ok({
+        message: user || legacyMember ? 'EMAIL_ALREADY_REGISTERED' : 'EMAIL_AVAILABLE',
+        data: {
+          exists: Boolean(user || legacyMember),
+        },
+      })
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({

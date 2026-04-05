@@ -25,8 +25,12 @@ export default class MembersController {
         await user.related('profile').create({
           name: payload.name,
           gender: payload.gender ?? undefined,
+          personal_id: payload.personal_id ?? undefined,
           whatsapp: payload.whatsapp ?? undefined,
+          line: payload.line ?? undefined,
           instagram: payload.instagram ?? undefined,
+          tiktok: payload.tiktok ?? undefined,
+          linkedin: payload.linkedin ?? undefined,
           provinceId: payload.province_id ?? undefined,
           cityId: payload.city_id ?? undefined,
           country: payload.country ?? undefined,
