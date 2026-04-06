@@ -9,6 +9,7 @@ import University from '#models/university'
 type EducationEntry = {
   degree: 'bachelor' | 'master' | 'doctoral'
   institution: string
+  faculty: string
   major: string
   intake_year: number
 }
