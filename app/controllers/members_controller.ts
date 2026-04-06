@@ -4,11 +4,13 @@ import { errors } from '@vinejs/vine'
 import PublicUser from '#models/public_user'
 import { selfSubmitValidator } from '#validators/member_validator'
 import { generateMemberId } from '../helpers/member_id_generator.js'
+import { getKaderisasiBadges } from '../helpers/kaderisasi_profile.js'
 
 export default class MembersController {
   async submit({ request, response }: HttpContext) {
     try {
       const payload = await selfSubmitValidator.validate(request.all())
+      const kaderisasiPath = payload.extra_data?.kaderisasi_path
 
       await database.transaction(async (trx) => {
         const user = new PublicUser()
@@ -24,6 +26,7 @@ export default class MembersController {
         // @ts-ignore cannot find a solution, it is error when using this monorepo
         await user.related('profile').create({
           name: payload.name,
+          badges: getKaderisasiBadges(kaderisasiPath),
           gender: payload.gender ?? undefined,
           personal_id: payload.personal_id ?? undefined,
           whatsapp: payload.whatsapp ?? undefined,

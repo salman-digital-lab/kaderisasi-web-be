@@ -46,6 +46,13 @@ export const updateProfileValidator = vine.compile(
             vine.enum(['professional', 'academic', 'social', 'entrepreneur', 'politics', 'other'])
           )
           .optional(),
+        kaderisasi_path: vine
+          .object({
+            ssc: vine.number().nullable().optional(),
+            lmd: vine.number().nullable().optional(),
+            spectra: vine.number().nullable().optional(),
+          })
+          .optional(),
         // alumni_regional_assignment is NOT accepted here — admin/hub only
       })
       .optional(),

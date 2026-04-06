@@ -8,6 +8,7 @@ import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { minioClient } from '#config/drive'
 import fs from 'node:fs'
 import env from '#start/env'
+import { getKaderisasiBadges, getKaderisasiLevel } from '../helpers/kaderisasi_profile.js'
 
 export default class ProfilesController {
   async show({ response, auth }: HttpContext) {
@@ -46,7 +47,18 @@ export default class ProfilesController {
         payload.extra_data = { ...(profile.extraData ?? {}), ...payload.extra_data } as typeof payload.extra_data
       }
 
-      const updated = await profile.merge(payload).save()
+      const kaderisasiPath = payload.extra_data?.kaderisasi_path
+      const updateData = {
+        ...payload,
+        ...(kaderisasiPath
+          ? {
+              level: getKaderisasiLevel(kaderisasiPath),
+              badges: getKaderisasiBadges(kaderisasiPath),
+            }
+          : {}),
+      }
+
+      const updated = await profile.merge(updateData).save()
 
       return response.ok({
         message: 'UPDATE_DATA_SUCCESS',
