@@ -17,7 +17,7 @@ import env from '#start/env'
 import { errors } from '@vinejs/vine'
 import LegacyMember from '#models/legacy_member'
 
-import { createHash } from 'crypto'
+import { createHash } from 'node:crypto'
 
 enum USER_LEVEL_ENUM {
   JAMAAH,
@@ -142,19 +142,19 @@ export default class AuthController {
         }
 
         await database.transaction(async (trx) => {
-          const user = new PublicUser()
-          user.email = payload.email
-          user.password = payload.password
-          user.accountStatus = 'active'
+          const newUser = new PublicUser()
+          newUser.email = payload.email
+          newUser.password = payload.password
+          newUser.accountStatus = 'active'
 
-          user.useTransaction(trx)
-          await user.save()
+          newUser.useTransaction(trx)
+          await newUser.save()
 
-          user.memberId = generateMemberId(user.id)
-          await user.save()
+          newUser.memberId = generateMemberId(newUser.id)
+          await newUser.save()
 
           // @ts-ignore cannot find a solution, it is error when using this monorepo
-          await user.related('profile').create({
+          await newUser.related('profile').create({
             name: legacyMember.name,
             gender: legacyMember.gender,
             whatsapp: legacyMember.phone,
@@ -281,18 +281,18 @@ export default class AuthController {
 
       if (userLegacy) {
         await database.transaction(async (trx) => {
-          const user = new PublicUser()
-          user.email = decrypted || userLegacy.email
-          user.password = password
-          user.accountStatus = 'active'
+          const newUser = new PublicUser()
+          newUser.email = decrypted || userLegacy.email
+          newUser.password = password
+          newUser.accountStatus = 'active'
 
-          user.useTransaction(trx)
-          await user.save()
+          newUser.useTransaction(trx)
+          await newUser.save()
 
-          user.memberId = generateMemberId(user.id)
-          await user.save()
+          newUser.memberId = generateMemberId(newUser.id)
+          await newUser.save()
 
-          await user.related('profile').create({
+          await newUser.related('profile').create({
             name: userLegacy.name,
             gender: userLegacy.gender,
             whatsapp: userLegacy.phone,

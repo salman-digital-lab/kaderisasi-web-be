@@ -82,7 +82,7 @@ async function fetchTemplate(templateId: number) {
 
 function buildParticipantData(
   registration: ActivityRegistration,
-  activity: Activity,
+  activity: Activity
 ): CertificateParticipantData {
   const profile = registration.publicUser?.profile
 
@@ -93,9 +93,7 @@ function buildParticipantData(
     email: registration.publicUser?.email || '',
     university: profile?.university?.name || '',
     activity_name: activity.name,
-    activity_date: activity.activityStart
-      ? activity.activityStart.toFormat('dd MMMM yyyy')
-      : '',
+    activity_date: activity.activityStart ? activity.activityStart.toFormat('dd MMMM yyyy') : '',
   }
 }
 
@@ -116,9 +114,7 @@ function buildTemplateData(template: CertificateTemplate): CertificateTemplateDa
   }
 }
 
-export async function buildCertificateData(
-  registrationId: number,
-): Promise<CertificateResult> {
+export async function buildCertificateData(registrationId: number): Promise<CertificateResult> {
   const registration = await fetchRegistration(registrationId)
 
   if (!registration) {
@@ -155,7 +151,7 @@ export async function buildCertificateData(
 
 export async function validateRegistrationOwnership(
   registrationId: number,
-  userId: number,
+  userId: number
 ): Promise<boolean> {
   const registration = await ActivityRegistration.query()
     .where('id', registrationId)

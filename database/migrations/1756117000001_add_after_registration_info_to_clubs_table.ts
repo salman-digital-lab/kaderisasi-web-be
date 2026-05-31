@@ -6,7 +6,10 @@ export default class extends BaseSchema {
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
       // Update the default value to include after_registration_info
-      table.jsonb('registration_info').defaultTo('{"registration_info": "", "after_registration_info": ""}').alter()
+      table
+        .jsonb('registration_info')
+        .defaultTo('{"registration_info": "", "after_registration_info": ""}')
+        .alter()
     })
   }
 

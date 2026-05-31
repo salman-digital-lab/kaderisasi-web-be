@@ -8,7 +8,20 @@ export const achievementValidator = vine.compile(
     type: vine.number().withoutDecimals(),
     proof: vine.file({
       size: '5mb',
-      extnames: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'PNG', 'JPG', 'JPEG', 'PDF', 'DOC', 'DOCX'],
+      extnames: [
+        'jpg',
+        'png',
+        'jpeg',
+        'pdf',
+        'doc',
+        'docx',
+        'PNG',
+        'JPG',
+        'JPEG',
+        'PDF',
+        'DOC',
+        'DOCX',
+      ],
     }),
   })
 )
@@ -19,9 +32,24 @@ export const updateAchievementValidator = vine.compile(
     description: vine.string().optional(),
     achievement_date: vine.string().optional(),
     type: vine.number().withoutDecimals().optional(),
-    proof: vine.file({
-      size: '5mb',
-      extnames: ['jpg', 'png', 'jpeg', 'pdf', 'doc', 'docx', 'PNG', 'JPG', 'JPEG', 'PDF', 'DOC', 'DOCX'],
-    }).optional(),
+    proof: vine
+      .file({
+        size: '5mb',
+        extnames: [
+          'jpg',
+          'png',
+          'jpeg',
+          'pdf',
+          'doc',
+          'docx',
+          'PNG',
+          'JPG',
+          'JPEG',
+          'PDF',
+          'DOC',
+          'DOCX',
+        ],
+      })
+      .optional(),
   })
-) 
+)

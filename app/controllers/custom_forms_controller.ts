@@ -23,7 +23,7 @@ export default class CustomFormsController {
             message: 'FORM_ID_REQUIRED',
           })
         }
-        
+
         customForm = await CustomForm.query()
           .where('id', featureId)
           .where('feature_type', 'independent_form')
@@ -35,7 +35,7 @@ export default class CustomFormsController {
             message: 'FEATURE_ID_REQUIRED',
           })
         }
-        
+
         customForm = await CustomForm.query()
           .where('feature_type', featureType)
           .where('feature_id', featureId)
@@ -83,7 +83,7 @@ export default class CustomFormsController {
       const user = auth.getUserOrFail()
 
       if (feature_type === 'activity_registration') {
-        const ActivityRegistration = (await import('#models/activity_registration')).default
+        const { default: ActivityRegistration } = await import('#models/activity_registration')
 
         // Check if already registered
         const existingRegistration = await ActivityRegistration.query()
@@ -111,7 +111,7 @@ export default class CustomFormsController {
           data: registration,
         })
       } else if (feature_type === 'club_registration') {
-        const ClubRegistration = (await import('#models/club_registration')).default
+        const { default: ClubRegistration } = await import('#models/club_registration')
 
         // Check if already registered
         const existingRegistration = await ClubRegistration.query()

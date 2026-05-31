@@ -44,7 +44,10 @@ export default class ProfilesController {
       const profile = await Profile.findByOrFail('user_id', id)
 
       if (payload.extra_data) {
-        payload.extra_data = { ...(profile.extraData ?? {}), ...payload.extra_data } as typeof payload.extra_data
+        payload.extra_data = {
+          ...(profile.extraData ?? {}),
+          ...payload.extra_data,
+        } as typeof payload.extra_data
       }
 
       const kaderisasiPath = payload.extra_data?.kaderisasi_path

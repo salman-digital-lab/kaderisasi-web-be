@@ -17,7 +17,7 @@ export default class ClubRegistrationsController {
       const payload = await clubRegistrationValidator.validate(request.all())
 
       const club = await Club.findOrFail(clubId)
-      
+
       // Get user profile
 
       // Check if already registered

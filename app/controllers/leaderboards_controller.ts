@@ -128,9 +128,7 @@ export default class LeaderboardsController {
       const user = auth.getUserOrFail()
 
       // Get user's lifetime leaderboard entry
-      const userEntry = await LifetimeLeaderboard.query()
-        .where('userId', user.id)
-        .first()
+      const userEntry = await LifetimeLeaderboard.query().where('userId', user.id).first()
 
       if (!userEntry) {
         return response.ok({
@@ -138,7 +136,7 @@ export default class LeaderboardsController {
           data: {
             rank: null,
             score: 0,
-            message: 'User not found in leaderboard'
+            message: 'User not found in leaderboard',
           },
         })
       }
@@ -148,7 +146,7 @@ export default class LeaderboardsController {
         .where('score', '>', userEntry.score)
         .count('* as total')
 
-      const userRank = parseInt(rank[0].$extras.total) + 1
+      const userRank = Number.parseInt(rank[0].$extras.total) + 1
 
       return response.ok({
         message: 'GET_DATA_SUCCESS',

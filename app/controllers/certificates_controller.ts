@@ -4,8 +4,8 @@ import { buildCertificateData, validateRegistrationOwnership } from '#services/c
 export default class CertificatesController {
   async show({ params, response }: HttpContext) {
     try {
-      const registrationId = parseInt(params.id, 10)
-      if (isNaN(registrationId) || registrationId <= 0) {
+      const registrationId = Number.parseInt(params.id, 10)
+      if (Number.isNaN(registrationId) || registrationId <= 0) {
         return response.badRequest({ message: 'INVALID_REGISTRATION_ID' })
       }
 
@@ -25,9 +25,9 @@ export default class CertificatesController {
   async generateSingle({ params, response, auth }: HttpContext) {
     try {
       const userId = auth.user?.id
-      const registrationId = parseInt(params.id, 10)
+      const registrationId = Number.parseInt(params.id, 10)
 
-      if (isNaN(registrationId) || registrationId <= 0) {
+      if (Number.isNaN(registrationId) || registrationId <= 0) {
         return response.badRequest({ message: 'INVALID_REGISTRATION_ID' })
       }
 

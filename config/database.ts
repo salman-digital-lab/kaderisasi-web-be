@@ -17,7 +17,10 @@ const dbConfig = defineConfig({
         min: 2,
         max: 10,
         acquireTimeoutMillis: 30000,
-        afterCreate(conn: { query: (sql: string, cb: (err: Error | null) => void) => void }, done: (err: Error | null, conn: unknown) => void) {
+        afterCreate(
+          conn: { query: (sql: string, cb: (err: Error | null) => void) => void },
+          done: (err: Error | null, conn: unknown) => void
+        ) {
           conn.query('SELECT 1', (err) => done(err, conn))
         },
       },
