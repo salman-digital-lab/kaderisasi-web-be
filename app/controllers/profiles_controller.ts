@@ -9,6 +9,7 @@ import { minioClient } from '#config/drive'
 import fs from 'node:fs'
 import env from '#start/env'
 import { getKaderisasiBadges, getKaderisasiLevel } from '../helpers/kaderisasi_profile.js'
+import { normalizeEducationHistory } from '../helpers/education_history.js'
 
 export default class ProfilesController {
   async show({ response, auth }: HttpContext) {
@@ -53,6 +54,9 @@ export default class ProfilesController {
       const kaderisasiPath = payload.extra_data?.kaderisasi_path
       const updateData = {
         ...payload,
+        ...(payload.education_history
+          ? { education_history: normalizeEducationHistory(payload.education_history) }
+          : {}),
         ...(kaderisasiPath
           ? {
               level: getKaderisasiLevel(kaderisasiPath),

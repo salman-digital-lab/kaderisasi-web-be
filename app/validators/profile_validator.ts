@@ -20,11 +20,11 @@ export const updateProfileValidator = vine.compile(
     education_history: vine
       .array(
         vine.object({
-          degree: vine.enum(['bachelor', 'master', 'doctoral']),
-          institution: vine.string(),
-          faculty: vine.string(),
-          major: vine.string(),
-          intake_year: vine.number(),
+          degree: vine.enum(['bachelor', 'master', 'doctoral']).optional(),
+          institution: vine.string().optional(),
+          faculty: vine.string().optional(),
+          major: vine.string().optional(),
+          intake_year: vine.number().optional(),
         })
       )
       .optional(),

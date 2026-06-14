@@ -5,6 +5,7 @@ import PublicUser from '#models/public_user'
 import { selfSubmitValidator } from '#validators/member_validator'
 import { generateMemberId } from '../helpers/member_id_generator.js'
 import { getKaderisasiBadges } from '../helpers/kaderisasi_profile.js'
+import { normalizeEducationHistory } from '../helpers/education_history.js'
 
 export default class MembersController {
   async submit({ request, response }: HttpContext) {
@@ -40,7 +41,7 @@ export default class MembersController {
           birthDate: payload.birth_date ? new Date(payload.birth_date) : undefined,
           originProvinceId: payload.origin_province_id ?? undefined,
           originCityId: payload.origin_city_id ?? undefined,
-          educationHistory: payload.education_history ?? [],
+          educationHistory: normalizeEducationHistory(payload.education_history),
           workHistory: payload.work_history ?? [],
           extraData: payload.extra_data ?? {},
         })

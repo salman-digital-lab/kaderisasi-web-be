@@ -7,11 +7,11 @@ import City from '#models/city'
 import University from '#models/university'
 
 type EducationEntry = {
-  degree: 'bachelor' | 'master' | 'doctoral'
-  institution: string
-  faculty: string
-  major: string
-  intake_year: number
+  degree?: 'bachelor' | 'master' | 'doctoral'
+  institution?: string
+  faculty?: string
+  major?: string
+  intake_year?: number
 }
 
 type WorkEntry = {
