@@ -160,10 +160,7 @@ export default class AuthController {
             whatsapp: legacyMember.phone,
             line: legacyMember.line_id,
             level: getLevel(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
-            // @ts-ignore
-            badges: JSON.stringify(
-              generateBadges(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra)
-            ),
+            badges: generateBadges(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
           })
         })
 
@@ -298,10 +295,7 @@ export default class AuthController {
             whatsapp: userLegacy.phone,
             line: userLegacy.line_id,
             level: getLevel(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra),
-            // @ts-ignore
-            badges: JSON.stringify(
-              generateBadges(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra)
-            ),
+            badges: generateBadges(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra),
           })
         })
 
