@@ -111,6 +111,8 @@ router
 
     router
       .group(() => {
+        router.get('/code/:code', [CertificatesController, 'showByCode'])
+        router.get('/verify/:code', [CertificatesController, 'verify'])
         // Public — view certificate without login
         router.get('/:id', [CertificatesController, 'show'])
         // Authenticated — verify ownership before download

@@ -1,6 +1,7 @@
 import Activity from '#models/activity'
 import ActivityRegistration from '#models/activity_registration'
 import CertificateTemplate from '#models/certificate_template'
+import IssuedCertificate from '#models/issued_certificate'
 
 export type CertificateParticipantData = {
   registration_id: number
@@ -48,6 +49,18 @@ export type CertificateResponseData = {
   activity: CertificateActivityData
   template: CertificateTemplateData
   participant: CertificateParticipantData
+  certificate?: IssuedCertificateData
+}
+
+export type IssuedCertificateData = {
+  id: number
+  certificate_code: string
+  registration_id: number
+  activity_id: number
+  template_id: number
+  issued_at: string
+  revoked_at: string | null
+  revoked_reason: string | null
 }
 
 export type CertificateErrorType =
@@ -55,6 +68,7 @@ export type CertificateErrorType =
   | 'ACTIVITY_NOT_FOUND'
   | 'NO_CERTIFICATE_TEMPLATE'
   | 'CERTIFICATE_TEMPLATE_NOT_FOUND'
+  | 'CERTIFICATE_NOT_FOUND'
 
 export type CertificateResult =
   | { success: true; data: CertificateResponseData }
@@ -114,6 +128,32 @@ function buildTemplateData(template: CertificateTemplate): CertificateTemplateDa
   }
 }
 
+function buildIssuedCertificateData(issued: IssuedCertificate): IssuedCertificateData {
+  return {
+    id: issued.id,
+    certificate_code: issued.certificateCode,
+    registration_id: issued.registrationId,
+    activity_id: issued.activityId,
+    template_id: issued.templateId,
+    issued_at: issued.issuedAt.toISO() ?? '',
+    revoked_at: issued.revokedAt?.toISO() ?? null,
+    revoked_reason: issued.revokedReason,
+  }
+}
+
+function buildIssuedResponseData(issued: IssuedCertificate): CertificateResponseData {
+  return {
+    activity: {
+      id: issued.activityId,
+      name: issued.participantSnapshot.activity_name,
+      activity_start: null,
+    },
+    template: issued.templateSnapshot,
+    participant: issued.participantSnapshot,
+    certificate: buildIssuedCertificateData(issued),
+  }
+}
+
 export async function buildCertificateData(registrationId: number): Promise<CertificateResult> {
   const registration = await fetchRegistration(registrationId)
 
@@ -147,6 +187,16 @@ export async function buildCertificateData(registrationId: number): Promise<Cert
       participant: buildParticipantData(registration, activity),
     },
   }
+}
+
+export async function getIssuedCertificateByCode(code: string): Promise<CertificateResult> {
+  const issued = await IssuedCertificate.findBy('certificateCode', code)
+
+  if (!issued) {
+    return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
+  }
+
+  return { success: true, data: buildIssuedResponseData(issued) }
 }
 
 export async function validateRegistrationOwnership(
