@@ -1,5 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@adonisjs/lucid/orm'
+import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
+import Club from '#models/club'
+import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 type PersonalQuestionnaire = {
   name: string
@@ -77,6 +79,14 @@ export default class Activity extends BaseModel {
 
   @column()
   declare activityCategory: number
+
+  @column()
+  declare clubId: number | null
+
+  @belongsTo(() => Club, {
+    foreignKey: 'clubId',
+  })
+  declare club: BelongsTo<typeof Club>
 
   @column()
   declare additionalConfig: AdditionalConfig

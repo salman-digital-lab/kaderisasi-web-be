@@ -67,6 +67,9 @@ export default class ClubRegistrationsController {
         .where('club_id', club.id)
         .where('member_id', user.id)
         .preload('club')
+        .preload('roles', (roleQuery) => {
+          roleQuery.orderBy('sort_order', 'asc').orderBy('is_primary', 'desc')
+        })
         .first()
 
       return response.ok({
@@ -97,6 +100,9 @@ export default class ClubRegistrationsController {
       const query = ClubRegistration.query()
         .where('member_id', user.id)
         .preload('club')
+        .preload('roles', (roleQuery) => {
+          roleQuery.orderBy('sort_order', 'asc').orderBy('is_primary', 'desc')
+        })
         .orderBy('created_at', 'desc')
 
       if (status) {

@@ -1,8 +1,9 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import Club from '#models/club'
 import PublicUser from '#models/public_user'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import ClubMemberRole from '#models/club_member_role'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 
 export default class ClubRegistration extends BaseModel {
   @column({ isPrimary: true })
@@ -26,6 +27,11 @@ export default class ClubRegistration extends BaseModel {
 
   @column()
   declare status: string
+
+  @hasMany(() => ClubMemberRole, {
+    foreignKey: 'clubRegistrationId',
+  })
+  declare roles: HasMany<typeof ClubMemberRole>
 
   @column()
   declare additionalData: Record<string, any>

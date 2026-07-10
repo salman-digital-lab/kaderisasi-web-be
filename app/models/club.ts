@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon'
 import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import Activity from '#models/activity'
 import ClubRegistration from '#models/club_registration'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
 
@@ -18,12 +19,17 @@ export type RegistrationInfoStructure = {
   after_registration_info: string
 }
 
+export type ClubType = 'UKM' | 'AVISMAN'
+
 export default class Club extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
   @column()
   declare name: string
+
+  @column()
+  declare clubType: ClubType
 
   @column()
   declare description: string
@@ -44,6 +50,11 @@ export default class Club extends BaseModel {
     foreignKey: 'clubId',
   })
   declare registrations: HasMany<typeof ClubRegistration>
+
+  @hasMany(() => Activity, {
+    foreignKey: 'clubId',
+  })
+  declare activities: HasMany<typeof Activity>
 
   @column.date()
   declare startPeriod: DateTime | null

@@ -17,10 +17,14 @@ export default class ActivitiesController {
       const perPage = request.qs().per_page ?? 10
       const search = request.qs().search
 
-      const clause: { activity_category?: number } = {}
+      const clause: { activity_category?: number; club_id?: number } = {}
 
       if (request.qs().category) {
         clause.activity_category = request.qs().category
+      }
+
+      if (request.qs().club_id) {
+        clause.club_id = request.qs().club_id
       }
 
       const activities = await Activity.query()
@@ -67,7 +71,7 @@ export default class ActivitiesController {
   async show({ params, response }: HttpContext) {
     try {
       const slug: number = params.slug
-      var activityData = await Activity.query().where({ slug: slug }).firstOrFail()
+      var activityData = await Activity.query().where({ slug: slug }).preload('club').firstOrFail()
 
       return response.ok({
         message: 'GET_DATA_SUCCESS',
