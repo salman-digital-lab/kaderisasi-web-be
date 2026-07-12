@@ -1,50 +1,24 @@
 import { HttpContext } from '@adonisjs/core/http'
 import ClubRegistration from '#models/club_registration'
 import Club from '#models/club'
-import {
-  clubRegistrationValidator,
-  updateClubRegistrationValidator,
-} from '#validators/club_registration_validator'
+import { updateClubRegistrationValidator } from '#validators/club_registration_validator'
 
 export default class ClubRegistrationsController {
   /**
    * Register current user to a club
    */
-  async register({ params, request, response, auth }: HttpContext) {
+  async register({ params, response, auth }: HttpContext) {
     try {
-      const user = auth.getUserOrFail()
+      auth.getUserOrFail()
       const clubId = params.id
-      const payload = await clubRegistrationValidator.validate(request.all())
 
       const club = await Club.findOrFail(clubId)
 
-      // Get user profile
-
-      // Check if already registered
-      const existingRegistration = await ClubRegistration.query()
-        .where('club_id', club.id)
-        .where('member_id', user.id)
-        .first()
-
-      if (existingRegistration) {
-        return response.conflict({
-          message: 'ALREADY_REGISTERED',
-        })
+      if (!club.isRegistrationOpen) {
+        return response.badRequest({ message: 'REGISTRATION_CLOSED' })
       }
 
-      const registration = await ClubRegistration.create({
-        clubId: club.id,
-        memberId: user.id,
-        status: 'PENDING',
-        additionalData: payload.additional_data || {},
-      })
-
-      await registration.load('club')
-
-      return response.ok({
-        message: 'CLUB_REGISTRATION_SUCCESS',
-        data: registration,
-      })
+      return response.badRequest({ message: 'CUSTOM_FORM_REQUIRED' })
     } catch (error) {
       return response.internalServerError({
         message: 'GENERAL_ERROR',

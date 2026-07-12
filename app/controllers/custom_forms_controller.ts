@@ -1,5 +1,6 @@
 import { HttpContext } from '@adonisjs/core/http'
 import CustomForm from '#models/custom_form'
+import Club from '#models/club'
 
 export default class CustomFormsController {
   async getByFeature({ request, response }: HttpContext) {
@@ -27,6 +28,7 @@ export default class CustomFormsController {
         customForm = await CustomForm.query()
           .where('id', featureId)
           .where('feature_type', 'independent_form')
+          .where('is_active', true)
           .first()
       } else {
         // For activity_registration and club_registration
@@ -39,6 +41,7 @@ export default class CustomFormsController {
         customForm = await CustomForm.query()
           .where('feature_type', featureType)
           .where('feature_id', featureId)
+          .where('is_active', true)
           .first()
       }
 
@@ -112,6 +115,21 @@ export default class CustomFormsController {
         })
       } else if (feature_type === 'club_registration') {
         const { default: ClubRegistration } = await import('#models/club_registration')
+
+        const club = await Club.find(feature_id)
+        if (!club || !club.isRegistrationOpen) {
+          return response.badRequest({ message: 'REGISTRATION_CLOSED' })
+        }
+
+        const activeCustomForm = await CustomForm.query()
+          .where('feature_type', 'club_registration')
+          .where('feature_id', feature_id)
+          .where('is_active', true)
+          .first()
+
+        if (!activeCustomForm) {
+          return response.badRequest({ message: 'ACTIVE_CUSTOM_FORM_REQUIRED' })
+        }
 
         // Check if already registered
         const existingRegistration = await ClubRegistration.query()
