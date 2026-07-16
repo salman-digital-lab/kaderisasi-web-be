@@ -34,7 +34,7 @@ export default class ClubRegistration extends BaseModel {
   declare roles: HasMany<typeof ClubMemberRole>
 
   @column()
-  declare additionalData: Record<string, any>
+  declare additionalData: Record<string, unknown>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

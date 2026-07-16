@@ -1,7 +1,12 @@
 import { HttpContext } from '@adonisjs/core/http'
+import db from '@adonisjs/lucid/services/db'
 import ClubRegistration from '#models/club_registration'
 import Club from '#models/club'
 import { updateClubRegistrationValidator } from '#validators/club_registration_validator'
+import { isClubRegistrationOpen } from '#services/club_service'
+
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'UNKNOWN_ERROR'
 
 export default class ClubRegistrationsController {
   /**
@@ -12,9 +17,13 @@ export default class ClubRegistrationsController {
       auth.getUserOrFail()
       const clubId = params.id
 
-      const club = await Club.findOrFail(clubId)
+      const club = await Club.find(clubId)
 
-      if (!club.isRegistrationOpen) {
+      if (!club || !club.isShow) {
+        return response.notFound({ message: 'CLUB_NOT_FOUND' })
+      }
+
+      if (!isClubRegistrationOpen(club)) {
         return response.badRequest({ message: 'REGISTRATION_CLOSED' })
       }
 
@@ -22,7 +31,7 @@ export default class ClubRegistrationsController {
     } catch (error) {
       return response.internalServerError({
         message: 'GENERAL_ERROR',
-        error: error.message,
+        error: getErrorMessage(error),
       })
     }
   }
@@ -35,7 +44,11 @@ export default class ClubRegistrationsController {
       const user = auth.getUserOrFail()
       const clubId = params.id
 
-      const club = await Club.findOrFail(clubId)
+      const club = await Club.find(clubId)
+
+      if (!club) {
+        return response.notFound({ message: 'CLUB_NOT_FOUND' })
+      }
 
       const registration = await ClubRegistration.query()
         .where('club_id', club.id)
@@ -56,7 +69,7 @@ export default class ClubRegistrationsController {
     } catch (error) {
       return response.internalServerError({
         message: 'GENERAL_ERROR',
-        error: error.message,
+        error: getErrorMessage(error),
       })
     }
   }
@@ -138,20 +151,28 @@ export default class ClubRegistrationsController {
       const user = auth.getUserOrFail()
       const clubId = params.id
 
-      const registration = await ClubRegistration.query()
-        .where('club_id', clubId)
-        .where('member_id', user.id)
-        .firstOrFail()
+      const result = await db.transaction(async (trx) => {
+        const registration = await ClubRegistration.query({ client: trx })
+          .where('club_id', clubId)
+          .where('member_id', user.id)
+          .forUpdate()
+          .first()
 
-      // Only allow cancellation if status is PENDING or APPROVED
-      if (!['PENDING', 'APPROVED'].includes(registration.status)) {
-        return response.badRequest({
-          message: 'CANNOT_CANCEL_REGISTRATION',
-        })
+        if (!registration) return 'REGISTRATION_NOT_FOUND' as const
+        if (registration.status !== 'PENDING') return 'CANNOT_CANCEL_REGISTRATION' as const
+
+        registration.useTransaction(trx)
+        await registration.delete()
+        return 'DELETED' as const
+      })
+
+      if (result === 'REGISTRATION_NOT_FOUND') {
+        return response.notFound({ message: result })
       }
 
-      // Delete the registration instead of changing status
-      await registration.delete()
+      if (result === 'CANNOT_CANCEL_REGISTRATION') {
+        return response.badRequest({ message: result })
+      }
 
       return response.ok({
         message: 'CLUB_REGISTRATION_DELETED',
@@ -160,7 +181,7 @@ export default class ClubRegistrationsController {
     } catch (error) {
       return response.internalServerError({
         message: 'GENERAL_ERROR',
-        error: error.message,
+        error: getErrorMessage(error),
       })
     }
   }
