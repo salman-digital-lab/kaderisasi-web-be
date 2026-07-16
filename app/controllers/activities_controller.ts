@@ -5,6 +5,11 @@ import {
   guestActivityRegistrationValidator,
 } from '#validators/activity_validator'
 import ActivityRegistration from '#models/activity_registration'
+import IssuedCertificate from '#models/issued_certificate'
+import {
+  serializeOwnerCertificateState,
+  type CertificateOwnerState,
+} from '#services/certificate_service'
 import { errors } from '@vinejs/vine'
 
 // Matches ACTIVITY_TYPE_ENUM.REGISTRATION_ONLY from the shared type constants
@@ -90,7 +95,15 @@ export default class ActivitiesController {
     const slug: string = params.slug
     try {
       const activity = await Activity.findByOrFail('slug', slug)
-      const registration: { status: string; visible_at?: string; registration_id?: number } = {
+      const registration: {
+        status: string
+        visible_at?: string
+        registration_id?: number
+        certificate_state?: CertificateOwnerState
+        certificate_code?: string | null
+        certificate_issued_at?: string | null
+        certificate_revoked_at?: string | null
+      } = {
         status: 'BELUM TERDAFTAR',
       }
       const isRegistered = await ActivityRegistration.query()
@@ -125,6 +138,15 @@ export default class ActivitiesController {
           registration.status = isRegistered.status
           registration.registration_id = isRegistered.id
         }
+
+        if (registration.registration_id) {
+          const issued = await IssuedCertificate.findBy('registrationId', isRegistered.id)
+          const certificate = serializeOwnerCertificateState(isRegistered, issued)
+          registration.certificate_state = certificate.state
+          registration.certificate_code = certificate.certificate_code
+          registration.certificate_issued_at = certificate.issued_at
+          registration.certificate_revoked_at = certificate.revoked_at
+        }
       }
 
       return response.ok({
@@ -157,9 +179,18 @@ export default class ActivitiesController {
         })
       }
 
+      const issued = await IssuedCertificate.findBy('registrationId', registrationData.id)
+      const certificate = serializeOwnerCertificateState(registrationData, issued)
+
       return response.ok({
         message: 'GET_DATA_SUCCESS',
-        data: registrationData,
+        data: {
+          ...registrationData.serialize(),
+          certificate_state: certificate.state,
+          certificate_code: certificate.certificate_code,
+          certificate_issued_at: certificate.issued_at,
+          certificate_revoked_at: certificate.revoked_at,
+        },
       })
     } catch (error) {
       return response.internalServerError({

@@ -7,6 +7,7 @@ import CertificateTemplate from '#models/certificate_template'
 import PublicUser from '#models/public_user'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import type {
+  CertificateActivityData,
   CertificateParticipantData,
   CertificateTemplateData,
 } from '#services/certificate_service'
@@ -57,6 +58,15 @@ export default class IssuedCertificate extends BaseModel {
   declare participantSnapshot: CertificateParticipantData
 
   @column()
+  declare activitySnapshot: CertificateActivityData | null
+
+  @column()
+  declare snapshotVersion: number
+
+  @column()
+  declare templateVersion: number
+
+  @column()
   declare issuedBy: number | null
 
   @belongsTo(() => AdminUser, {
@@ -72,6 +82,9 @@ export default class IssuedCertificate extends BaseModel {
 
   @column()
   declare revokedReason: string | null
+
+  @column()
+  declare revokedBy: number | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

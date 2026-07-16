@@ -111,11 +111,19 @@ router
 
     router
       .group(() => {
-        router.get('/code/:code', [CertificatesController, 'showByCode'])
-        router.get('/verify/:code', [CertificatesController, 'verify'])
-        // Public — view certificate without login
-        router.get('/:id', [CertificatesController, 'show'])
-        // Authenticated — verify ownership before download
+        router
+          .get('/code/:code/download', [CertificatesController, 'downloadByCode'])
+          .use(middleware.auth())
+        router
+          .get('/registrations/:registrationId', [CertificatesController, 'registrationState'])
+          .use(middleware.auth())
+        router
+          .get('/code/:code', [CertificatesController, 'showByCode'])
+          .use(middleware.publicCertificateThrottle({ limit: 30, windowMs: 60_000 }))
+        router
+          .get('/verify/:code', [CertificatesController, 'verify'])
+          .use(middleware.publicCertificateThrottle({ limit: 30, windowMs: 60_000 }))
+        // Authenticated compatibility endpoint. It only returns an issued certificate.
         router
           .post('/:id/download', [CertificatesController, 'generateSingle'])
           .use(middleware.auth())

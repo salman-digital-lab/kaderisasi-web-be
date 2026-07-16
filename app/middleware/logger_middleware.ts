@@ -1,28 +1,26 @@
-import { HttpContext } from '@adonisjs/core/http'
-import { NextFn } from '@adonisjs/core/types/http'
+import type { HttpContext } from '@adonisjs/core/http'
+import type { NextFn } from '@adonisjs/core/types/http'
 import logger from '@adonisjs/core/services/logger'
 
-export default class {
-  async handle({ request, response }: HttpContext, next: NextFn) {
+export default class LoggerMiddleware {
+  async handle(ctx: HttpContext, next: NextFn): Promise<void> {
+    const startedAt = performance.now()
     await next()
-    const datetime = new Date().toLocaleString()
 
-    if (request.url() === '/health') return
-    if (response.getStatus() < 400) return
+    const status = ctx.response.getStatus()
+    const payload = {
+      request_id: ctx.requestId,
+      method: ctx.request.method(),
+      path: ctx.request.url(),
+      status,
+      duration_ms: Math.round((performance.now() - startedAt) * 100) / 100,
+      actor_user_id: ctx.auth.user?.id,
+    }
 
-    logger.error(
-      'DATE: ' +
-        datetime +
-        ' | IP: ' +
-        request.ip() +
-        ' | METHOD: ' +
-        request.method() +
-        ' | URL: ' +
-        request.url() +
-        ' | STATUS: ' +
-        JSON.stringify(response.getStatus()) +
-        ' | BODY: ' +
-        JSON.stringify(response.getBody())
-    )
+    if (status >= 500) {
+      logger.error(payload, 'HTTP request failed')
+    } else if (status >= 400) {
+      logger.warn(payload, 'HTTP request rejected')
+    }
   }
 }

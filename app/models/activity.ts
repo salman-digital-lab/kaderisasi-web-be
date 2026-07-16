@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import Club from '#models/club'
+import CertificateTemplate from '#models/certificate_template'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 
 type PersonalQuestionnaire = {
@@ -13,13 +14,13 @@ type StatusVisibility = {
   visible_at?: string // ISO datetime when status becomes visible
 }
 
-type AdditionalConfig = {
+export type AdditionalConfig = {
   custom_selection_status: string[]
   mandatory_profile_data: PersonalQuestionnaire[]
   additional_questionnaire: Questionnaire[]
   images: string[]
   status_visibility?: StatusVisibility
-  certificate_template_id?: number
+  certificate_template_id?: number | null
   allow_guest_registration?: boolean
 }
 
@@ -90,6 +91,14 @@ export default class Activity extends BaseModel {
 
   @column()
   declare additionalConfig: AdditionalConfig
+
+  @column()
+  declare certificateTemplateId: number | null
+
+  @belongsTo(() => CertificateTemplate, {
+    foreignKey: 'certificateTemplateId',
+  })
+  declare certificateTemplate: BelongsTo<typeof CertificateTemplate>
 
   @column()
   declare isPublished: boolean

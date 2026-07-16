@@ -2,6 +2,8 @@ import { HttpContext } from '@adonisjs/core/http'
 import PublicUser from '#models/public_user'
 import Profile from '#models/profile'
 import ActivityRegistration from '#models/activity_registration'
+import IssuedCertificate from '#models/issued_certificate'
+import { serializeOwnerCertificateState } from '#services/certificate_service'
 import { imageValidator, updateProfileValidator } from '#validators/profile_validator'
 import { errors } from '@vinejs/vine'
 import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
@@ -93,6 +95,16 @@ export default class ProfilesController {
         .select('*')
         .where('user_id', id)
         .preload('activity')
+      const issuedCertificates =
+        registrations.length > 0
+          ? await IssuedCertificate.query().whereIn(
+              'registrationId',
+              registrations.map((registration) => registration.id)
+            )
+          : []
+      const issuedByRegistration = new Map(
+        issuedCertificates.map((certificate) => [certificate.registrationId, certificate])
+      )
 
       // Check status visibility for each registration
       const now = new Date()
@@ -113,7 +125,17 @@ export default class ProfilesController {
           }
         }
 
-        return registration.serialize()
+        const certificate = serializeOwnerCertificateState(
+          registration,
+          issuedByRegistration.get(registration.id)
+        )
+        return {
+          ...registration.serialize(),
+          certificate_state: certificate.state,
+          certificate_code: certificate.certificate_code,
+          certificate_issued_at: certificate.issued_at,
+          certificate_revoked_at: certificate.revoked_at,
+        }
       })
 
       return response.ok({

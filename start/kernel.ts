@@ -33,6 +33,7 @@ server.use([
  * requests with a registered route.
  */
 router.use([
+  () => import('#middleware/request_id_middleware'),
   () => import('@adonisjs/core/bodyparser_middleware'),
   () => import('@adonisjs/auth/initialize_auth_middleware'),
   () => import('#middleware/logger_middleware'),
@@ -45,4 +46,5 @@ router.use([
 export const middleware = router.named({
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
+  publicCertificateThrottle: () => import('#middleware/public_certificate_throttle_middleware'),
 })
