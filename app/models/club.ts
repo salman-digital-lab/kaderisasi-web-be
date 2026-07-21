@@ -18,7 +18,9 @@ export type RegistrationInfoStructure = {
   registration_info: string
 }
 
-export type ClubType = 'UKM' | 'AVISMAN'
+export const CLUB_TYPES = ['UNIT', 'CLUB_KEPROFESIAN', 'CLUB_BAHASA', 'AVISMAN_REGIONAL'] as const
+
+export type ClubType = (typeof CLUB_TYPES)[number]
 
 export default class Club extends BaseModel {
   @column({ isPrimary: true })

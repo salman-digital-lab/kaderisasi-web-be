@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon'
+import { CLUB_TYPES } from '#models/club'
 import type { ClubType, MediaItem, MediaStructure } from '#models/club'
 
 const DEFAULT_PAGE = 1
@@ -76,7 +77,7 @@ function normalizePositiveInteger(value: unknown, fallback: number, maximum?: nu
 export function normalizeClubListQuery(query: Record<string, unknown>): ClubListQuery {
   const rawSearch = typeof query.search === 'string' ? query.search.trim() : ''
   const rawClubType = query.club_type
-  const clubType = rawClubType === 'UKM' || rawClubType === 'AVISMAN' ? rawClubType : undefined
+  const clubType = CLUB_TYPES.find((type) => type === rawClubType)
 
   return {
     page: normalizePositiveInteger(query.page, DEFAULT_PAGE),

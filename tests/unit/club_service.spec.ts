@@ -21,7 +21,16 @@ test.group('Club service', () => {
     assert.equal(normalized.perPage, 50)
     assert.lengthOf(normalized.search, 100)
     assert.isUndefined(normalized.clubType)
-    assert.equal(normalizeClubListQuery({ club_type: 'UKM' }).clubType, 'UKM')
+    assert.equal(normalizeClubListQuery({ club_type: 'UNIT' }).clubType, 'UNIT')
+    assert.equal(
+      normalizeClubListQuery({ club_type: 'CLUB_KEPROFESIAN' }).clubType,
+      'CLUB_KEPROFESIAN'
+    )
+    assert.equal(normalizeClubListQuery({ club_type: 'CLUB_BAHASA' }).clubType, 'CLUB_BAHASA')
+    assert.equal(
+      normalizeClubListQuery({ club_type: 'AVISMAN_REGIONAL' }).clubType,
+      'AVISMAN_REGIONAL'
+    )
   })
 
   test('treats the registration end date as inclusive and respects visibility', ({ assert }) => {
