@@ -1,5 +1,5 @@
-import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import router from '@adonisjs/core/services/router'
 
 const AuthController = () => import('#controllers/auth_controller')
 const ProfilesController = () => import('#controllers/profiles_controller')
@@ -111,6 +111,7 @@ router
 
     router
       .group(() => {
+        router.get('/code/:code/access', [CertificatesController, 'access']).use(middleware.auth())
         router
           .get('/code/:code/download', [CertificatesController, 'downloadByCode'])
           .use(middleware.auth())

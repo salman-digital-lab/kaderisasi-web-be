@@ -1,5 +1,5 @@
-import type { HttpContext } from '@adonisjs/core/http'
 import {
+  getCertificateDownloadAccess,
   getOwnerCertificateByCode,
   getOwnerCertificateByRegistration,
   getOwnerRegistrationCertificateState,
@@ -7,6 +7,7 @@ import {
   verifyCertificateByCode,
   type CertificateErrorType,
 } from '#services/certificate_service'
+import type { HttpContext } from '@adonisjs/core/http'
 
 function respondWithCertificateError(
   response: HttpContext['response'],
@@ -100,6 +101,14 @@ export default class CertificatesController {
     } catch {
       return response.internalServerError({ message: 'GENERAL_ERROR' })
     }
+  }
+
+  async access({ params, response, auth }: HttpContext) {
+    response.header('Cache-Control', 'no-store, private')
+    const result = await getCertificateDownloadAccess(params.code, auth.getUserOrFail().id)
+    return result.success
+      ? response.ok({ message: 'GET_DATA_SUCCESS', data: result.data })
+      : respondWithCertificateError(response, result.error)
   }
 
   async downloadByCode({ params, response, auth }: HttpContext) {

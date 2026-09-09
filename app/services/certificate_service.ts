@@ -378,3 +378,20 @@ export async function getOwnerCertificateByRegistration(
 
   return { success: true, data: buildIssuedResponseData(issued) }
 }
+
+export async function getCertificateDownloadAccess(
+  code: string,
+  userId: number
+): Promise<
+  CertificateResult<{ can_download: boolean; reason: 'owner' | 'not_owner' | 'revoked' }>
+> {
+  const normalized = normalizeCertificateCode(code)
+  if (!normalized) return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
+  const issued = await IssuedCertificate.query()
+    .select('id', 'userId', 'revokedAt')
+    .where('certificateCode', normalized)
+    .first()
+  if (!issued) return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
+  const reason = issued.userId !== userId ? 'not_owner' : issued.revokedAt ? 'revoked' : 'owner'
+  return { success: true, data: { can_download: reason === 'owner', reason } }
+}
