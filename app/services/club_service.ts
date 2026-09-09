@@ -104,7 +104,7 @@ export function isClubRegistrationOpen(
   }
 
   const registrationEndDate = club.registrationEndDate.toISODate()
-  const currentDate = now.toISODate()
+  const currentDate = now.setZone('Asia/Jakarta').toISODate()
 
   return registrationEndDate !== null && currentDate !== null && registrationEndDate >= currentDate
 }

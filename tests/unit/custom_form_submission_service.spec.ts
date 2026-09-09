@@ -122,3 +122,9 @@ test.group('Custom form submission validation', () => {
     )
   })
 })
+
+test('rejects whitespace-only required answers', ({ assert }) => {
+  assert.isFalse(
+    validateCustomFormSubmission(schema, { motivation: '      ', division: 'event' }).valid
+  )
+})

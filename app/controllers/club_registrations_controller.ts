@@ -2,7 +2,6 @@ import { HttpContext } from '@adonisjs/core/http'
 import db from '@adonisjs/lucid/services/db'
 import ClubRegistration from '#models/club_registration'
 import Club from '#models/club'
-import { updateClubRegistrationValidator } from '#validators/club_registration_validator'
 import { isClubRegistrationOpen } from '#services/club_service'
 
 const getErrorMessage = (error: unknown): string =>
@@ -113,28 +112,23 @@ export default class ClubRegistrationsController {
   /**
    * Update current user's registration data
    */
-  async updateRegistration({ params, request, response, auth }: HttpContext) {
+  async updateRegistration({ params, response, auth }: HttpContext) {
     try {
       const user = auth.getUserOrFail()
       const clubId = params.id
-      const payload = await updateClubRegistrationValidator.validate(request.all())
 
       const registration = await ClubRegistration.query()
         .where('club_id', clubId)
         .where('member_id', user.id)
-        .firstOrFail()
+        .first()
 
-      if (payload.additional_data) {
-        registration.additionalData = { ...registration.additionalData, ...payload.additional_data }
+      if (!registration) {
+        return response.notFound({ message: 'REGISTRATION_NOT_FOUND' })
       }
 
-      await registration.save()
-      await registration.load('club')
-
-      return response.ok({
-        message: 'CLUB_REGISTRATION_UPDATED',
-        data: registration,
-      })
+      // The submission confirmation promises immutable answers. Pending applicants
+      // can cancel and submit again; reviewed answers must remain available to admins.
+      return response.badRequest({ message: 'CANNOT_UPDATE_REGISTRATION' })
     } catch (error) {
       return response.internalServerError({
         message: 'GENERAL_ERROR',

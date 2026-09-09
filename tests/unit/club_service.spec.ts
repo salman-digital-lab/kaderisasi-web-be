@@ -139,3 +139,16 @@ test.group('Club service', () => {
     )
   })
 })
+
+test('closes registration at midnight Jakarta even when server uses UTC', ({ assert }) => {
+  assert.isFalse(
+    isClubRegistrationOpen(
+      {
+        isShow: true,
+        isRegistrationOpen: true,
+        registrationEndDate: DateTime.fromISO('2026-09-10'),
+      },
+      DateTime.fromISO('2026-09-10T17:00:00Z', { zone: 'utc' })
+    )
+  )
+})
