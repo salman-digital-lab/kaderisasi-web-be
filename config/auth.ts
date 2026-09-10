@@ -17,6 +17,7 @@ const authConfig = defineConfig({
       content: (user: JwtGuardUser<PublicUser>): JwtContent => ({
         userId: user.getId(),
         email: user.getOriginal().email,
+        aud: 'kaderisasi-public',
       }),
     }),
   },

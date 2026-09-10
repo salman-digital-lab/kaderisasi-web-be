@@ -12,9 +12,26 @@ const ClubRegistrationsController = () => import('#controllers/club_registration
 const CustomFormsController = () => import('#controllers/custom_forms_controller')
 const CertificatesController = () => import('#controllers/certificates_controller')
 const MembersController = () => import('#controllers/members_controller')
+const CoursesController = () => import('#controllers/courses_controller')
 
 router
   .group(() => {
+    router
+      .group(() => {
+        router.get('', [CoursesController, 'index'])
+        router.get(':id', [CoursesController, 'show'])
+        router.get(':id/lessons/:lessonId', [CoursesController, 'lesson'])
+        router.post(':id/lessons/:lessonId/visit', [CoursesController, 'visit'])
+        router.put(':id/lessons/:lessonId/completion', [CoursesController, 'complete'])
+        router.get(':id/lessons/:lessonId/documents/:documentId/download', [
+          CoursesController,
+          'download',
+        ])
+      })
+      .prefix('courses')
+      .use(middleware.auth())
+      .use(middleware.courseAudience())
+
     router
       .group(() => {
         router.post('register', [AuthController, 'register'])

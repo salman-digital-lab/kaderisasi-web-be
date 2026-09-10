@@ -46,5 +46,6 @@ router.use([
 export const middleware = router.named({
   guest: () => import('#middleware/guest_middleware'),
   auth: () => import('#middleware/auth_middleware'),
+  courseAudience: () => import('#middleware/course_audience_middleware'),
   publicCertificateThrottle: () => import('#middleware/public_certificate_throttle_middleware'),
 })
