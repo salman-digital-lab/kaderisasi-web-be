@@ -11,6 +11,10 @@ import {
   type CertificateOwnerState,
 } from '#services/certificate_service'
 import { errors } from '@vinejs/vine'
+import CustomForm from '#models/custom_form'
+import db from '@adonisjs/lucid/services/db'
+import { isActivityRegistrationOpen } from '#services/activity_registration_service'
+import { validateCustomFormSubmission } from '#services/custom_form_submission_service'
 
 // Matches ACTIVITY_TYPE_ENUM.REGISTRATION_ONLY from the shared type constants
 const ACTIVITY_TYPE_REGISTRATION_ONLY = 1
@@ -76,7 +80,11 @@ export default class ActivitiesController {
   async show({ params, response }: HttpContext) {
     try {
       const slug: number = params.slug
-      var activityData = await Activity.query().where({ slug: slug }).preload('club').firstOrFail()
+      const activityData = await Activity.query()
+        .where({ slug: slug, is_published: true })
+        .preload('club')
+        .first()
+      if (!activityData) return response.notFound({ message: 'ACTIVITY_NOT_FOUND' })
 
       return response.ok({
         message: 'GET_DATA_SUCCESS',
@@ -203,31 +211,58 @@ export default class ActivitiesController {
   async guestRegister({ params, request, response }: HttpContext) {
     try {
       const data = await guestActivityRegistrationValidator.validate(request.all())
-      const activity = await Activity.findByOrFail('slug', params.slug)
+      return await db.transaction(async (trx) => {
+        const activity = await Activity.query({ client: trx })
+          .where('slug', params.slug)
+          .forUpdate()
+          .first()
+        if (!activity?.isPublished) return response.notFound({ message: 'ACTIVITY_NOT_FOUND' })
 
-      const guestRegistrationAllowed =
-        activity.activityType === ACTIVITY_TYPE_REGISTRATION_ONLY &&
-        activity.additionalConfig?.allow_guest_registration
+        const guestRegistrationAllowed =
+          activity.activityType === ACTIVITY_TYPE_REGISTRATION_ONLY &&
+          activity.additionalConfig?.allow_guest_registration
 
-      if (!guestRegistrationAllowed) {
-        return response.forbidden({ message: 'GUEST_REGISTRATION_NOT_ALLOWED' })
-      }
+        if (!guestRegistrationAllowed) {
+          return response.forbidden({ message: 'GUEST_REGISTRATION_NOT_ALLOWED' })
+        }
 
-      if (!activity.isRegistrationOpen) {
-        return response.forbidden({ message: 'REGISTRATION_CLOSED' })
-      }
+        if (!isActivityRegistrationOpen(activity)) {
+          return response.forbidden({ message: 'REGISTRATION_CLOSED' })
+        }
 
-      const registration = await ActivityRegistration.create({
-        userId: null,
-        activityId: activity.id,
-        status: 'TERDAFTAR',
-        guestData: data.guest_data,
-        questionnaireAnswer: data.questionnaire_answer,
-      })
+        const activeForm = await CustomForm.query({ client: trx })
+          .where('feature_type', 'activity_registration')
+          .where('feature_id', activity.id)
+          .where('is_active', true)
+          .orderBy('updated_at', 'desc')
+          .orderBy('id', 'desc')
+          .first()
+        if (!activeForm) return response.badRequest({ message: 'ACTIVE_CUSTOM_FORM_REQUIRED' })
+        const submission = validateCustomFormSubmission(
+          activeForm.formSchema,
+          data.questionnaire_answer ?? {}
+        )
+        if (!submission.valid)
+          return response.unprocessableEntity({
+            message: 'INVALID_FORM_SUBMISSION',
+            errors: submission.errors,
+          })
 
-      return response.ok({
-        message: 'ACTIVITY_REGISTER_SUCCESS',
-        data: registration,
+        const registration = await ActivityRegistration.create(
+          {
+            userId: null,
+            activityId: activity.id,
+            status: 'TERDAFTAR',
+            guestData: data.guest_data,
+            questionnaireAnswer: submission.data,
+          },
+          { client: trx }
+        )
+
+        return response.ok({
+          message: 'ACTIVITY_REGISTER_SUCCESS',
+          data: registration,
+        })
       })
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {

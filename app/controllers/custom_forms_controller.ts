@@ -4,6 +4,9 @@ import Club from '#models/club'
 import { isClubRegistrationOpen, isClubRegistrationUniqueViolation } from '#services/club_service'
 import { validateCustomFormSubmission } from '#services/custom_form_submission_service'
 import { sanitizeRichText } from '#services/rich_text_service'
+import Activity from '#models/activity'
+import db from '@adonisjs/lucid/services/db'
+import { isActivityRegistrationOpen } from '#services/activity_registration_service'
 
 export default class CustomFormsController {
   async getByFeature({ request, response }: HttpContext) {
@@ -18,6 +21,11 @@ export default class CustomFormsController {
       }
 
       let customForm: CustomForm | null = null
+
+      if (featureType === 'activity_registration') {
+        const activity = featureId ? await Activity.find(featureId) : null
+        if (!activity?.isPublished) return response.notFound({ message: 'ACTIVITY_NOT_FOUND' })
+      }
 
       if (featureType === 'independent_form') {
         // For independent forms, we need to get by ID instead of feature_id
@@ -97,31 +105,54 @@ export default class CustomFormsController {
 
       if (feature_type === 'activity_registration') {
         const { default: ActivityRegistration } = await import('#models/activity_registration')
+        return await db.transaction(async (trx) => {
+          const activity = await Activity.query({ client: trx })
+            .where('id', feature_id)
+            .forUpdate()
+            .first()
+          if (!activity || !isActivityRegistrationOpen(activity))
+            return response.badRequest({ message: 'REGISTRATION_CLOSED' })
+          const activeForm = await CustomForm.query({ client: trx })
+            .where('feature_type', 'activity_registration')
+            .where('feature_id', activity.id)
+            .where('is_active', true)
+            .orderBy('updated_at', 'desc')
+            .orderBy('id', 'desc')
+            .first()
+          if (!activeForm) return response.badRequest({ message: 'ACTIVE_CUSTOM_FORM_REQUIRED' })
+          const submission = validateCustomFormSubmission(activeForm.formSchema, custom_form_data)
+          if (!submission.valid)
+            return response.unprocessableEntity({
+              message: 'INVALID_FORM_SUBMISSION',
+              errors: submission.errors,
+            })
+          const existingRegistration = await ActivityRegistration.query({ client: trx })
+            .where('user_id', user.id)
+            .where('activity_id', feature_id)
+            .first()
 
-        // Check if already registered
-        const existingRegistration = await ActivityRegistration.query()
-          .where('user_id', user.id)
-          .where('activity_id', feature_id)
-          .first()
+          if (existingRegistration) {
+            return response.conflict({
+              message: 'ALREADY_REGISTERED',
+            })
+          }
 
-        if (existingRegistration) {
-          return response.conflict({
-            message: 'ALREADY_REGISTERED',
+          // Create new registration
+          // Profile data is already saved separately, only save custom form data
+          const registration = await ActivityRegistration.create(
+            {
+              userId: user.id,
+              activityId: feature_id,
+              status: 'TERDAFTAR',
+              questionnaireAnswer: submission.data,
+            },
+            { client: trx }
+          )
+
+          return response.created({
+            message: 'ACTIVITY_REGISTER_SUCCESS',
+            data: registration,
           })
-        }
-
-        // Create new registration
-        // Profile data is already saved separately, only save custom form data
-        const registration = await ActivityRegistration.create({
-          userId: user.id,
-          activityId: feature_id,
-          status: 'TERDAFTAR',
-          questionnaireAnswer: custom_form_data,
-        })
-
-        return response.created({
-          message: 'ACTIVITY_REGISTER_SUCCESS',
-          data: registration,
         })
       } else if (feature_type === 'club_registration') {
         const { default: ClubRegistration } = await import('#models/club_registration')
