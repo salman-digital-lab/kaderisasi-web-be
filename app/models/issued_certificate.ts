@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon'
+import type { CertificateApproval } from '#services/certificate_approval'
 import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
 import Activity from '#models/activity'
 import ActivityRegistration from '#models/activity_registration'
@@ -13,6 +14,11 @@ import type {
 } from '#services/certificate_service'
 
 export default class IssuedCertificate extends BaseModel {
+  @column()
+  declare approvalSnapshot:
+    | (CertificateApproval & { request_id: number; signer_id: number; content_hash: string })
+    | null
+
   @column({ isPrimary: true })
   declare id: number
 

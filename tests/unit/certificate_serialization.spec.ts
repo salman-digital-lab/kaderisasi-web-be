@@ -44,6 +44,25 @@ function certificateData(): CertificateResponseData {
 }
 
 test.group('Public certificate serialization', () => {
+  test('exposes approval identity without internal audit fields', ({ assert }) => {
+    const data = certificateData()
+    data.certificate.approval = {
+      signer_name: 'Fixture signer',
+      signer_title: 'Ketua kegiatan',
+      approved_at: '2026-09-10T10:00:00.000+07:00',
+      ...{ signer_id: 999, request_id: 123, content_hash: 'private audit fingerprint' },
+    }
+    for (const serialized of [
+      serializePublicCertificate(data),
+      serializeCertificateVerification(data),
+    ]) {
+      const payload = JSON.stringify(serialized)
+      assert.include(payload, 'Fixture signer')
+      assert.notInclude(payload, 'signer_id')
+      assert.notInclude(payload, 'request_id')
+      assert.notInclude(payload, 'content_hash')
+    }
+  })
   test('strips email and all internal identifiers', ({ assert }) => {
     const serialized = serializePublicCertificate(certificateData())
     const payload = JSON.stringify(serialized)

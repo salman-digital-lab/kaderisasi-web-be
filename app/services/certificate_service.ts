@@ -1,5 +1,7 @@
 import ActivityRegistration from '#models/activity_registration'
 import IssuedCertificate from '#models/issued_certificate'
+import { hasCertificateApproval, publicApproval } from '#services/certificate_approval'
+import type { CertificateApproval } from '#services/certificate_approval'
 
 export const ELIGIBLE_CERTIFICATE_STATUS = 'LULUS KEGIATAN'
 export const CERTIFICATE_CODE_MAX_LENGTH = 96
@@ -68,6 +70,7 @@ export type CertificateTemplateData = {
 }
 
 export type IssuedCertificateData = {
+  approval?: CertificateApproval
   id: number
   certificate_code: string
   registration_id: number
@@ -105,6 +108,7 @@ export type PublicCertificateRenderData = {
     activity_date: string
   }
   certificate: {
+    approval?: CertificateApproval
     certificate_code: string
     issued_at: string
     revoked_at: string | null
@@ -113,6 +117,7 @@ export type PublicCertificateRenderData = {
 }
 
 export type CertificateVerificationData = {
+  approval?: CertificateApproval
   valid: boolean
   state: 'issued_active' | 'issued_revoked'
   certificate_code: string
@@ -136,7 +141,7 @@ export function serializeOwnerCertificateState(
   registration: ActivityRegistration,
   issued?: IssuedCertificate | null
 ): OwnerCertificateStateData {
-  if (!issued) {
+  if (!issued || !hasCertificateApproval(issued)) {
     return {
       state:
         registration.status === ELIGIBLE_CERTIFICATE_STATUS
@@ -211,7 +216,10 @@ export function buildIssuedResponseData(issued: IssuedCertificate): CertificateR
       ...issued.participantSnapshot,
       gender: issued.participantSnapshot.gender ?? '',
     },
-    certificate: buildIssuedCertificateData(issued),
+    certificate: {
+      ...buildIssuedCertificateData(issued),
+      ...(issued.approvalSnapshot ? { approval: publicApproval(issued.approvalSnapshot) } : {}),
+    },
   }
 }
 
@@ -240,6 +248,7 @@ export function serializePublicCertificate(
       activity_date: data.participant.activity_date,
     },
     certificate: {
+      ...(data.certificate.approval ? { approval: publicApproval(data.certificate.approval) } : {}),
       certificate_code: data.certificate.certificate_code,
       issued_at: data.certificate.issued_at,
       revoked_at: data.certificate.revoked_at,
@@ -255,6 +264,7 @@ export function serializeCertificateVerification(
 
   return {
     valid: !revoked,
+    ...(data.certificate.approval ? { approval: publicApproval(data.certificate.approval) } : {}),
     state: revoked ? 'issued_revoked' : 'issued_active',
     certificate_code: data.certificate.certificate_code,
     participant_name: data.participant.name,
@@ -275,7 +285,7 @@ async function findIssuedByCode(code: string): Promise<CertificateResult<IssuedC
 
   const issued = await IssuedCertificate.findBy('certificateCode', normalizedCode)
 
-  return issued
+  return issued && hasCertificateApproval(issued)
     ? { success: true, data: issued }
     : { success: false, error: 'CERTIFICATE_NOT_FOUND' }
 }
@@ -368,7 +378,7 @@ export async function getOwnerCertificateByRegistration(
 
   const issued = await IssuedCertificate.findBy('registrationId', registrationId)
 
-  if (!issued) {
+  if (!issued || !hasCertificateApproval(issued)) {
     return { success: false, error: 'CERTIFICATE_NOT_ISSUED' }
   }
 
@@ -388,10 +398,11 @@ export async function getCertificateDownloadAccess(
   const normalized = normalizeCertificateCode(code)
   if (!normalized) return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
   const issued = await IssuedCertificate.query()
-    .select('id', 'userId', 'revokedAt')
+    .select('id', 'userId', 'revokedAt', 'templateSnapshot', 'approvalSnapshot')
     .where('certificateCode', normalized)
     .first()
-  if (!issued) return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
+  if (!issued || !hasCertificateApproval(issued))
+    return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
   const reason = issued.userId !== userId ? 'not_owner' : issued.revokedAt ? 'revoked' : 'owner'
   return { success: true, data: { can_download: reason === 'owner', reason } }
 }
