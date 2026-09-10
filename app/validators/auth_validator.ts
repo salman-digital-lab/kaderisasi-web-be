@@ -1,5 +1,13 @@
 import vine from '@vinejs/vine'
 
+export const googleLoginValidator = vine.compile(
+  vine.object({
+    code: vine.string().minLength(1).maxLength(4096),
+    codeVerifier: vine.string().minLength(43).maxLength(128),
+    nonce: vine.string().minLength(32).maxLength(128),
+  })
+)
+
 export const registerValidator = vine.compile(
   vine.object({
     fullname: vine.string(),

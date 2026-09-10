@@ -6,10 +6,9 @@ import IssuedCertificate from '#models/issued_certificate'
 import { serializeOwnerCertificateState } from '#services/certificate_service'
 import { imageValidator, updateProfileValidator } from '#validators/profile_validator'
 import { errors } from '@vinejs/vine'
-import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
-import { minioClient } from '#config/drive'
-import fs from 'node:fs'
-import env from '#start/env'
+import { readFile } from 'node:fs/promises'
+import { InvalidProfileImageError } from '#services/profile_image_service'
+import { replaceProfilePicture } from '#services/profile_picture_service'
 import { getKaderisasiBadges, getKaderisasiLevel } from '../helpers/kaderisasi_profile.js'
 import { normalizeEducationHistory } from '../helpers/education_history.js'
 
@@ -150,7 +149,7 @@ export default class ProfilesController {
     }
   }
 
-  async uploadPicture({ request, response, auth }: HttpContext) {
+  async uploadPicture({ request, response, auth }: HttpContext): Promise<void> {
     const payload = await request.validateUsing(imageValidator)
     try {
       const picture = payload.file
@@ -169,40 +168,7 @@ export default class ProfilesController {
       }
 
       const user = auth.getUserOrFail()
-      const profile = await Profile.findByOrFail('user_id', user.id)
-
-      // Delete old picture if exists
-      if (profile.picture) {
-        try {
-          await minioClient.send(
-            new DeleteObjectCommand({
-              Bucket: env.get('DRIVE_BUCKET'),
-              Key: profile.picture,
-            })
-          )
-        } catch (error) {
-          console.error('Error deleting old picture:', error)
-        }
-      }
-
-      // Generate unique filename
-      const fileName = `${user.id}_${Date.now()}.${picture.extname}`
-
-      // Upload to MinIO
-      const fileBuffer = fs.readFileSync(picture.tmpPath!)
-      await minioClient.send(
-        new PutObjectCommand({
-          Bucket: env.get('DRIVE_BUCKET'),
-          Key: fileName,
-          Body: fileBuffer,
-          ContentType: picture?.headers?.['content-type'] || 'application/octet-stream',
-          ACL: 'public-read',
-        })
-      )
-
-      // Update profile with new picture path
-      profile.picture = fileName
-      await profile.save()
+      const fileName = await replaceProfilePicture(user.id, await readFile(picture.tmpPath!))
 
       return response.ok({
         message: 'UPLOAD_SUCCESS',
@@ -211,9 +177,12 @@ export default class ProfilesController {
         },
       })
     } catch (error) {
+      if (error instanceof InvalidProfileImageError) {
+        return response.badRequest({ message: 'INVALID_PICTURE' })
+      }
       return response.internalServerError({
         message: 'GENERAL_ERROR',
-        error: error.message,
+        error: error instanceof Error ? error.message : 'UPLOAD_FAILED',
       })
     }
   }

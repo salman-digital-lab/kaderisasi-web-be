@@ -109,7 +109,10 @@ export default class AuthController {
       const email: string = payload.email
       const password: string = payload.password
       const user = await PublicUser.query().where('email', email).first()
-      const legacyMember = await LegacyMember.findBy('email', email)
+      const legacyMatches = await LegacyMember.query()
+        .whereRaw('lower(email) = ?', [email.toLowerCase()])
+        .limit(2)
+      const legacyMember = legacyMatches.length === 1 ? legacyMatches[0] : null
 
       if (!user && !legacyMember) {
         return response.notFound({
@@ -118,7 +121,13 @@ export default class AuthController {
       }
 
       if (user) {
-        if (!user.password || !(await hash.verify(user.password, password))) {
+        const validPassword = user.password
+          ? await hash.verify(user.password, password)
+          : Boolean(
+              legacyMember?.password &&
+                createHash('md5').update(password).digest('hex') === legacyMember.password
+            )
+        if (!validPassword) {
           return response.unauthorized({
             message: 'WRONG_PASSWORD',
           })

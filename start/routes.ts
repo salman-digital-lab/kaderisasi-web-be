@@ -2,6 +2,7 @@ import { middleware } from '#start/kernel'
 import router from '@adonisjs/core/services/router'
 
 const AuthController = () => import('#controllers/auth_controller')
+const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const ProfilesController = () => import('#controllers/profiles_controller')
 const ActivitiesController = () => import('#controllers/activities_controller')
 const RuangCurhatsController = () => import('#controllers/ruang_curhats_controller')
@@ -18,6 +19,7 @@ router
       .group(() => {
         router.post('register', [AuthController, 'register'])
         router.post('login', [AuthController, 'login'])
+        router.post('google', [GoogleAuthController, 'login'])
         router.post('check-email', [AuthController, 'checkEmail'])
         router.post('forgot-password', [AuthController, 'sendPasswordRecovery'])
         router.put('reset-password', [AuthController, 'resetPassword'])
