@@ -1,4 +1,5 @@
 import vine from '@vinejs/vine'
+import { educationHistorySchema, workHistorySchema } from '#validators/profile_history'
 
 export const selfSubmitValidator = vine.compile(
   vine.object({
@@ -16,27 +17,8 @@ export const selfSubmitValidator = vine.compile(
     birth_date: vine.string().optional(),
     origin_province_id: vine.number().optional(),
     origin_city_id: vine.number().optional(),
-    education_history: vine
-      .array(
-        vine.object({
-          degree: vine.enum(['bachelor', 'master', 'doctoral']).optional(),
-          institution: vine.string().optional(),
-          faculty: vine.string().optional(),
-          major: vine.string().optional(),
-          intake_year: vine.number().optional(),
-        })
-      )
-      .optional(),
-    work_history: vine
-      .array(
-        vine.object({
-          job_title: vine.string(),
-          company: vine.string(),
-          start_year: vine.number().optional(),
-          end_year: vine.number().optional(),
-        })
-      )
-      .optional(),
+    education_history: educationHistorySchema.clone(),
+    work_history: workHistorySchema.clone(),
     extra_data: vine
       .object({
         preferred_name: vine.string().optional(),

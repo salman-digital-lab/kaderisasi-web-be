@@ -5,6 +5,12 @@ import Province from '#models/province'
 import PublicUser from '#models/public_user'
 import City from '#models/city'
 import University from '#models/university'
+import {
+  normalizeEducationHistory,
+  normalizeWorkHistory,
+  type EducationEntry,
+  type WorkEntry,
+} from '../helpers/education_history.js'
 
 const normalizeStringArray = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -29,21 +35,6 @@ const normalizeStringArray = (value: unknown): string[] => {
   }
 
   return []
-}
-
-type EducationEntry = {
-  degree?: 'bachelor' | 'master' | 'doctoral'
-  institution?: string
-  faculty?: string
-  major?: string
-  intake_year?: number
-}
-
-type WorkEntry = {
-  job_title: string
-  company: string
-  start_year?: number
-  end_year?: number
 }
 
 type ExtraData = {
@@ -159,11 +150,13 @@ export default class Profile extends BaseModel {
 
   @column({
     prepare: (value) => (value != null ? JSON.stringify(value) : null),
+    consume: normalizeEducationHistory,
   })
   declare educationHistory: EducationEntry[]
 
   @column({
     prepare: (value) => (value != null ? JSON.stringify(value) : null),
+    consume: normalizeWorkHistory,
   })
   declare workHistory: WorkEntry[]
 
