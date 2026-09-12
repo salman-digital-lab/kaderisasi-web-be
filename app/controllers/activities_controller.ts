@@ -302,9 +302,25 @@ export default class ActivitiesController {
         })
       }
 
-      const updated = await registered
-        .merge({ questionnaireAnswer: data.questionnaire_answer })
-        .save()
+      const activeForm = await CustomForm.query()
+        .where('feature_type', 'activity_registration')
+        .where('feature_id', activity.id)
+        .where('is_active', true)
+        .orderBy('updated_at', 'desc')
+        .orderBy('id', 'desc')
+        .first()
+      let answers = data.questionnaire_answer
+      if (activeForm) {
+        const submission = validateCustomFormSubmission(activeForm.formSchema, answers)
+        if (!submission.valid)
+          return response.unprocessableEntity({
+            message: 'INVALID_FORM_SUBMISSION',
+            errors: submission.errors,
+          })
+        answers = submission.data
+      }
+
+      const updated = await registered.merge({ questionnaireAnswer: answers }).save()
 
       return response.ok({
         message: 'UPDATE_DATA_SUCCESS',

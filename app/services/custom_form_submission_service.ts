@@ -1,3 +1,6 @@
+import { formRoute, customSections, validateFormRouting } from '#services/form_routing'
+import type { SectionNavigation } from '#services/form_routing'
+
 const MAX_SUBMISSION_SIZE = 100_000
 const MAX_FIELD_STRING_LENGTH = 10_000
 
@@ -28,11 +31,14 @@ type CustomFormField = {
 }
 
 type CustomFormSection = {
+  id?: string
+  navigation?: SectionNavigation
   section_name: string
   fields: CustomFormField[]
 }
 
 type CustomFormSchema = {
+  version?: number
   fields: CustomFormSection[]
 }
 
@@ -55,6 +61,7 @@ function isCustomFormSchema(value: unknown): value is CustomFormSchema {
   return value.fields.every(
     (section) =>
       isRecord(section) &&
+      (section.id === undefined || typeof section.id === 'string') &&
       typeof section.section_name === 'string' &&
       Array.isArray(section.fields) &&
       section.fields.every(
@@ -185,6 +192,10 @@ export function validateCustomFormSubmission(
     return { valid: false, errors: [{ message: 'Konfigurasi formulir tidak valid.' }] }
   }
 
+  if (validateFormRouting(schema).length > 0) {
+    return { valid: false, errors: [{ message: 'Konfigurasi alur formulir tidak valid.' }] }
+  }
+
   if (!isRecord(submission)) {
     return { valid: false, errors: [{ message: 'Data formulir tidak valid.' }] }
   }
@@ -194,8 +205,9 @@ export function validateCustomFormSubmission(
   }
 
   const allSchemaFields = schema.fields.flatMap((section) => section.fields)
-  const allSubmissionFields = schema.fields
-    .filter((section) => section.section_name !== 'profile_data')
+  const reached = new Set(formRoute(schema, submission))
+  const allSubmissionFields = customSections(schema)
+    .filter((section) => reached.has(section.id))
     .flatMap((section) => section.fields)
   const fields = allSubmissionFields.filter((field) => !field.hidden && !field.disabled)
 
