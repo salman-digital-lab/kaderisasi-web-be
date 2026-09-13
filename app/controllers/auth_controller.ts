@@ -15,53 +15,14 @@ import { generateMemberId } from '../helpers/member_id_generator.js'
 import Profile from '#models/profile'
 import env from '#start/env'
 import { errors } from '@vinejs/vine'
-import LegacyMember from '#models/legacy_member'
-
-import { createHash } from 'node:crypto'
-
-enum USER_LEVEL_ENUM {
-  JAMAAH,
-  AKTIVIS = 3,
-  KADER = 6,
-  KADER_LANJUT = 10,
-}
-
-const getLevel = (ssc?: number, lmd?: number, spectra?: number) => {
-  if (ssc !== null && lmd !== null && spectra !== null) {
-    return USER_LEVEL_ENUM.KADER_LANJUT
-  }
-  if (ssc !== null && lmd !== null) {
-    return USER_LEVEL_ENUM.KADER
-  }
-
-  if (ssc !== null) {
-    return USER_LEVEL_ENUM.AKTIVIS
-  }
-  return USER_LEVEL_ENUM.JAMAAH
-}
-
-const generateBadges = (ssc?: number, lmd?: number, spectra?: number) => {
-  const badges = []
-  if (ssc !== null) {
-    badges.push('SSC-' + ssc)
-  }
-  if (lmd !== null) {
-    badges.push('LMD-' + lmd)
-  }
-  if (spectra !== null) {
-    badges.push('SPECTRA-' + spectra)
-  }
-  return badges
-}
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
     try {
       const payload = await registerValidator.validate(request.all())
       const exist = await PublicUser.findBy('email', payload.email)
-      const legacyMember = await LegacyMember.findBy('email', payload.email)
 
-      if (exist || legacyMember) {
+      if (exist) {
         return response.conflict({
           message: 'EMAIL_ALREADY_REGISTERED',
         })
@@ -109,85 +70,26 @@ export default class AuthController {
       const email: string = payload.email
       const password: string = payload.password
       const user = await PublicUser.query().where('email', email).first()
-      const legacyMatches = await LegacyMember.query()
-        .whereRaw('lower(email) = ?', [email.toLowerCase()])
-        .limit(2)
-      const legacyMember = legacyMatches.length === 1 ? legacyMatches[0] : null
-
-      if (!user && !legacyMember) {
+      if (!user) {
         return response.notFound({
           message: 'USER_NOT_FOUND',
         })
       }
 
-      if (user) {
-        const validPassword = user.password
-          ? await hash.verify(user.password, password)
-          : Boolean(
-              legacyMember?.password &&
-                createHash('md5').update(password).digest('hex') === legacyMember.password
-            )
-        if (!validPassword) {
-          return response.unauthorized({
-            message: 'WRONG_PASSWORD',
-          })
-        }
-
-        const data = await Profile.findBy('user_id', user.id)
-        const token = await auth.use('jwt').generate(user)
-
-        return response.ok({
-          message: 'LOGIN_SUCCESS',
-          data: { user, data, token },
+      const validPassword = user.password ? await hash.verify(user.password, password) : false
+      if (!validPassword) {
+        return response.unauthorized({
+          message: 'WRONG_PASSWORD',
         })
       }
 
-      if (legacyMember) {
-        const hashedPassword = createHash('md5').update(password).digest('hex')
-        if (hashedPassword !== legacyMember.password) {
-          return response.unauthorized({
-            message: 'WRONG_PASSWORD',
-          })
-        }
+      const data = await Profile.findBy('user_id', user.id)
+      const token = await auth.use('jwt').generate(user)
 
-        await database.transaction(async (trx) => {
-          const newUser = new PublicUser()
-          newUser.email = payload.email
-          newUser.password = payload.password
-          newUser.accountStatus = 'active'
-
-          newUser.useTransaction(trx)
-          await newUser.save()
-
-          newUser.memberId = generateMemberId(newUser.id)
-          await newUser.save()
-
-          // @ts-ignore cannot find a solution, it is error when using this monorepo
-          await newUser.related('profile').create({
-            name: legacyMember.name,
-            gender: legacyMember.gender,
-            whatsapp: legacyMember.phone,
-            line: legacyMember.line_id,
-            level: getLevel(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
-            badges: generateBadges(legacyMember.ssc, legacyMember.lmd, legacyMember.spectra),
-          })
-        })
-
-        const newUserAfterLegacyMember = await PublicUser.query().where('email', email).first()
-        if (!newUserAfterLegacyMember) {
-          return response.notFound({
-            message: 'USER_NOT_FOUND',
-          })
-        }
-
-        const data = await Profile.findBy('user_id', newUserAfterLegacyMember.id)
-        const token = await auth.use('jwt').generate(newUserAfterLegacyMember)
-
-        return response.ok({
-          message: 'LOGIN_SUCCESS',
-          data: { user: newUserAfterLegacyMember, data, token },
-        })
-      }
+      return response.ok({
+        message: 'LOGIN_SUCCESS',
+        data: { user, data, token },
+      })
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
@@ -207,12 +109,11 @@ export default class AuthController {
       const payload = await checkEmailValidator.validate(request.all())
       const normalizedEmail = payload.email.toLowerCase()
       const user = await PublicUser.findBy('email', normalizedEmail)
-      const legacyMember = await LegacyMember.findBy('email', normalizedEmail)
 
       return response.ok({
-        message: user || legacyMember ? 'EMAIL_ALREADY_REGISTERED' : 'EMAIL_AVAILABLE',
+        message: user ? 'EMAIL_ALREADY_REGISTERED' : 'EMAIL_AVAILABLE',
         data: {
-          exists: Boolean(user || legacyMember),
+          exists: Boolean(user),
         },
       })
     } catch (error) {
@@ -231,11 +132,10 @@ export default class AuthController {
 
   async sendPasswordRecovery({ request, response }: HttpContext) {
     try {
-      const email: string = request.all().email
+      const { email } = await checkEmailValidator.validate(request.all())
       const user = await PublicUser.findBy('email', email)
-      const userLegacy = await LegacyMember.findBy('email', email)
 
-      if (!user && !userLegacy) {
+      if (!user) {
         return response.notFound({
           message: 'EMAIL_NOT_FOUND',
         })
@@ -269,49 +169,20 @@ export default class AuthController {
     try {
       const { password } = await resetPasswordValidator.validate(request.all())
       const decrypted = encryption.decrypt<string>(token)
-      const user = await PublicUser.findBy('email', decrypted)
-      const userLegacy = await LegacyMember.findBy('email', decrypted)
+      const user = decrypted
+        ? await PublicUser.findBy('email', decrypted.trim().toLowerCase())
+        : null
 
-      if (!user && !userLegacy) {
+      if (!user) {
         return response.unauthorized({
           message: 'INVALID_TOKEN',
         })
       }
 
-      if (user) {
-        await user.merge({ password: password }).save()
-        return response.ok({
-          message: 'RESET_PASSWORD_SUCCESS',
-        })
-      }
-
-      if (userLegacy) {
-        await database.transaction(async (trx) => {
-          const newUser = new PublicUser()
-          newUser.email = decrypted || userLegacy.email
-          newUser.password = password
-          newUser.accountStatus = 'active'
-
-          newUser.useTransaction(trx)
-          await newUser.save()
-
-          newUser.memberId = generateMemberId(newUser.id)
-          await newUser.save()
-
-          await newUser.related('profile').create({
-            name: userLegacy.name,
-            gender: userLegacy.gender,
-            whatsapp: userLegacy.phone,
-            line: userLegacy.line_id,
-            level: getLevel(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra),
-            badges: generateBadges(userLegacy.ssc, userLegacy.lmd, userLegacy.spectra),
-          })
-        })
-
-        return response.ok({
-          message: 'RESET_PASSWORD_SUCCESS',
-        })
-      }
+      await user.merge({ password: password }).save()
+      return response.ok({
+        message: 'RESET_PASSWORD_SUCCESS',
+      })
     } catch (error) {
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
