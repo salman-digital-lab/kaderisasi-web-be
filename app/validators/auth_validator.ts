@@ -11,21 +11,21 @@ export const googleLoginValidator = vine.compile(
 export const registerValidator = vine.compile(
   vine.object({
     fullname: vine.string(),
-    email: vine.string().email(),
+    email: vine.string().trim().toLowerCase().email(),
     password: vine.string(),
   })
 )
 
 export const loginValidator = vine.compile(
   vine.object({
-    email: vine.string().email(),
+    email: vine.string().trim().toLowerCase().email(),
     password: vine.string(),
   })
 )
 
 export const checkEmailValidator = vine.compile(
   vine.object({
-    email: vine.string().email(),
+    email: vine.string().trim().toLowerCase().email(),
   })
 )
 

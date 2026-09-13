@@ -23,7 +23,7 @@ try {
     new URL('../../kaderisasi-admin-be-go/database/schema.sql', import.meta.url),
     'utf8'
   )
-  for (const table of ['public_users', 'profiles', 'legacy_members']) {
+  for (const table of ['public_users', 'profiles']) {
     const ddl = snapshot.match(
       new RegExp(`CREATE TABLE public\\.${table} \\([\\s\\S]*?\\n\\);`)
     )?.[0]

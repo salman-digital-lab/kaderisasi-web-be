@@ -1,6 +1,5 @@
 import database from '@adonisjs/lucid/services/db'
 import PublicUser from '#models/public_user'
-import LegacyMember from '#models/legacy_member'
 import Profile from '#models/profile'
 import { generateMemberId } from '../helpers/member_id_generator.js'
 import { GoogleLoginError, type GoogleIdentity } from '#services/google_identity_service'
@@ -20,44 +19,13 @@ export async function resolveGoogleAccount(identity: GoogleIdentity): Promise<Pu
       return users[0]
     }
 
-    const legacyMembers = await LegacyMember.query({ client: trx })
-      .whereRaw('lower(email) = ?', [identity.email])
-      .limit(2)
-    if (legacyMembers.length > 1) throw new GoogleLoginError('GOOGLE_EMAIL_PASSWORD_REQUIRED')
-    const legacy = legacyMembers[0]
     const user = await PublicUser.create(
       { email: identity.email, password: null, accountStatus: 'active' },
       { client: trx }
     )
     user.memberId = generateMemberId(user.id)
     await user.save()
-    const badges: string[] = []
-    if (legacy?.ssc != null) badges.push(`SSC-${legacy.ssc}`)
-    if (legacy?.lmd != null) badges.push(`LMD-${legacy.lmd}`)
-    if (legacy?.spectra != null) badges.push(`SPECTRA-${legacy.spectra}`)
-    await Profile.create(
-      {
-        userId: user.id,
-        name: legacy?.name || identity.name,
-        ...(legacy
-          ? {
-              gender: legacy.gender,
-              whatsapp: legacy.phone,
-              line: legacy.line_id,
-              level:
-                legacy.ssc != null
-                  ? legacy.lmd != null
-                    ? legacy.spectra != null
-                      ? 10
-                      : 6
-                    : 3
-                  : 0,
-              badges,
-            }
-          : {}),
-      },
-      { client: trx }
-    )
+    await Profile.create({ userId: user.id, name: identity.name }, { client: trx })
     return user
   })
 }
