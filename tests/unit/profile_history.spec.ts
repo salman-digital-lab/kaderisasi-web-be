@@ -8,6 +8,19 @@ import {
 } from '../../app/helpers/education_history.js'
 
 test.group('Profile history compatibility', () => {
+  test('preserves school and diploma degrees in profile and guest submissions', async ({
+    assert,
+  }) => {
+    for (const degree of ['high_school', 'diploma']) {
+      for (const validator of [updateProfileValidator, selfSubmitValidator]) {
+        const result = await validator.validate({
+          name: 'Fixture',
+          education_history: [{ degree, institution: 'School', faculty: '' }],
+        })
+        assert.equal(normalizeEducationHistory(result.education_history)[0].degree, degree)
+      }
+    }
+  })
   test('reads legacy JSON strings, nullable years and invalid siblings', ({ assert }) => {
     const education = JSON.stringify([null, { institution: ' ITB ', intake_year: '2017' }])
     assert.deepEqual(normalizeEducationHistory(education), [

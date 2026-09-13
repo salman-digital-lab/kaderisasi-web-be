@@ -29,7 +29,7 @@ const historyYear = () =>
 export const educationHistorySchema = vine
   .array(
     vine.object({
-      degree: vine.enum(['bachelor', 'master', 'doctoral']).optional(),
+      degree: vine.enum(['high_school', 'diploma', 'bachelor', 'master', 'doctoral']).optional(),
       institution: vine.string().trim().optional(),
       faculty: vine.string().trim().optional(),
       major: vine.string().trim().optional(),
