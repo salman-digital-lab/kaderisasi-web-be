@@ -3,6 +3,7 @@ import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
 import Activity from '#models/activity'
 import PublicUser from '#models/public_user'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import type { StoredScoringData } from '#services/activity_scoring'
 
 export default class ActivityRegistration extends BaseModel {
   @column({ isPrimary: true })
@@ -32,6 +33,9 @@ export default class ActivityRegistration extends BaseModel {
 
   @column()
   declare questionnaireAnswer: Record<string, any>
+
+  @column({ serializeAs: null })
+  declare scoringData: StoredScoringData | null
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -5,6 +5,7 @@ import {
   guestActivityRegistrationValidator,
 } from '#validators/activity_validator'
 import ActivityRegistration from '#models/activity_registration'
+import { publishedActivityScore } from '#services/activity_scoring'
 import IssuedCertificate from '#models/issued_certificate'
 import {
   serializeOwnerCertificateState,
@@ -171,6 +172,8 @@ export default class ActivitiesController {
 
   async getRegistrationData({ auth, params, response }: HttpContext) {
     const id = auth.user?.id
+    response.header('Cache-Control', 'private, no-store')
+    if (!id) return response.unauthorized({ message: 'UNAUTHORIZED' })
     const slug: string = params.slug
     try {
       const activity = await Activity.findByOrFail('slug', slug)
@@ -194,6 +197,11 @@ export default class ActivitiesController {
         message: 'GET_DATA_SUCCESS',
         data: {
           ...registrationData.serialize(),
+          scoring_result: publishedActivityScore(
+            registrationData.scoringData,
+            registrationData.id,
+            activity.id
+          ),
           certificate_state: certificate.state,
           certificate_code: certificate.certificate_code,
           certificate_issued_at: certificate.issued_at,
