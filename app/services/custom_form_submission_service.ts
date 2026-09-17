@@ -97,6 +97,16 @@ function getOptionValue(option: CustomFormOption): string {
 
 function validateValueType(field: CustomFormField, value: unknown): boolean {
   switch (field.type) {
+    case 'education_history':
+      return Array.isArray(value) && value.length <= 50 && value.every(validEducation)
+    case 'current_education':
+      return validEducation(value)
+    case 'file':
+      return (
+        Array.isArray(value) &&
+        value.length <= 5 &&
+        value.every((id) => typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id))
+      )
     case 'number':
       return typeof value === 'number' && Number.isFinite(value)
     case 'multiselect':
@@ -108,6 +118,26 @@ function validateValueType(field: CustomFormField, value: unknown): boolean {
     default:
       return typeof value === 'string'
   }
+}
+
+function validEducation(value: unknown): boolean {
+  if (!isRecord(value)) return false
+  return Object.entries(value).every(([key, item]) => {
+    if (item === undefined || item === null || item === '') return true
+    if (key === 'degree')
+      return ['high_school', 'diploma', 'bachelor', 'master', 'doctoral'].includes(String(item))
+    if (key === 'intake_year')
+      return (
+        Number.isInteger(item) &&
+        Number(item) >= 1900 &&
+        Number(item) <= new Date().getFullYear() + 10
+      )
+    return (
+      ['institution', 'faculty', 'major'].includes(key) &&
+      typeof item === 'string' &&
+      item.length <= 10000
+    )
+  })
 }
 
 function validateAllowedOptions(field: CustomFormField, value: unknown): boolean {
@@ -124,6 +154,12 @@ function validateAllowedOptions(field: CustomFormField, value: unknown): boolean
 }
 
 function validateFieldRules(field: CustomFormField, value: unknown): string | undefined {
+  if (
+    field.required &&
+    field.type === 'current_education' &&
+    (!isRecord(value) || typeof value.institution !== 'string' || !value.institution.trim())
+  )
+    return `${field.label} wajib diisi.`
   if (field.required && (isEmptyValue(value) || (field.type === 'checkbox' && value === false))) {
     return `${field.label} wajib diisi.`
   }

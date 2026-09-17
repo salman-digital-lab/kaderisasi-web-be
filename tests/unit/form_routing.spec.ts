@@ -58,4 +58,81 @@ test.group('Branching form submissions', () => {
     assert.isTrue(result.valid)
     if (result.valid) assert.deepEqual(result.data, { track: 'finish' })
   })
+  test('evaluates multiple branching sections and prunes both skipped destinations', ({
+    assert,
+  }) => {
+    const schema = {
+      version: 2,
+      fields: [
+        {
+          id: 'first',
+          section_name: 'Pertama',
+          fields: [
+            {
+              key: 'first',
+              label: 'Jalur pertama',
+              type: 'radio',
+              required: true,
+              options: [
+                { label: 'Lanjut', value: 'next' },
+                { label: 'Selesai', value: 'done' },
+              ],
+            },
+          ],
+          navigation: {
+            questionKey: 'first',
+            defaultTarget: { type: 'submit' },
+            routes: [{ optionValue: 'next', target: { type: 'section', sectionId: 'second' } }],
+          },
+        },
+        {
+          id: 'skipped',
+          section_name: 'Dilewati',
+          fields: [
+            { key: 'skipped', label: 'Wajib jika dikunjungi', type: 'text', required: true },
+          ],
+        },
+        {
+          id: 'second',
+          section_name: 'Kedua',
+          fields: [
+            {
+              key: 'second',
+              label: 'Jalur kedua',
+              type: 'select',
+              required: true,
+              options: [
+                { label: 'Lanjut', value: 'next' },
+                { label: 'Selesai', value: 'done' },
+              ],
+            },
+          ],
+          navigation: {
+            questionKey: 'second',
+            defaultTarget: { type: 'next' },
+            routes: [{ optionValue: 'done', target: { type: 'submit' } }],
+          },
+        },
+        {
+          id: 'last',
+          section_name: 'Terakhir',
+          fields: [{ key: 'last', label: 'Catatan', type: 'text', required: true }],
+        },
+      ],
+    }
+    assert.deepEqual(validateFormRouting(schema as RoutingSchema), [])
+    assert.deepEqual(formRoute(schema as RoutingSchema, { first: 'next', second: 'next' }), [
+      'first',
+      'second',
+      'last',
+    ])
+    const result = validateCustomFormSubmission(schema, {
+      first: 'next',
+      second: 'done',
+      skipped: 'stale',
+      last: 'stale',
+    })
+    assert.deepEqual(result, { valid: true, data: { first: 'next', second: 'done' } })
+    assert.isFalse(validateCustomFormSubmission(schema, { first: 'next', second: 'next' }).valid)
+  })
 })

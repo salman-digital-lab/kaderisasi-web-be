@@ -16,6 +16,7 @@ import CustomForm from '#models/custom_form'
 import db from '@adonisjs/lucid/services/db'
 import { isActivityRegistrationOpen } from '#services/activity_registration_service'
 import { validateCustomFormSubmission } from '#services/custom_form_submission_service'
+import { claimFormAttachments, FormRequestError } from '#services/form_session_service'
 
 // Matches ACTIVITY_TYPE_ENUM.REGISTRATION_ONLY from the shared type constants
 const ACTIVITY_TYPE_REGISTRATION_ONLY = 1
@@ -256,6 +257,7 @@ export default class ActivitiesController {
             errors: submission.errors,
           })
 
+        await claimFormAttachments(trx, activeForm, data.session_token, null, submission.data)
         const registration = await ActivityRegistration.create(
           {
             userId: null,
@@ -273,6 +275,8 @@ export default class ActivitiesController {
         })
       })
     } catch (error) {
+      if (error instanceof FormRequestError)
+        return response.status(error.status).send({ message: error.message })
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
           message: error.messages[0]?.message || 'GENERAL_ERROR',
@@ -328,13 +332,30 @@ export default class ActivitiesController {
         answers = submission.data
       }
 
-      const updated = await registered.merge({ questionnaireAnswer: answers }).save()
+      const updated = await db.transaction(async (trx) => {
+        const locked = await ActivityRegistration.query({ client: trx })
+          .where('id', registered.id)
+          .forUpdate()
+          .firstOrFail()
+        if (activeForm)
+          await claimFormAttachments(
+            trx,
+            activeForm,
+            data.session_token,
+            user.id,
+            answers,
+            locked.questionnaireAnswer as Record<string, unknown>
+          )
+        return locked.merge({ questionnaireAnswer: answers }).save()
+      })
 
       return response.ok({
         message: 'UPDATE_DATA_SUCCESS',
         data: updated,
       })
     } catch (error) {
+      if (error instanceof FormRequestError)
+        return response.status(error.status).send({ message: error.message })
       if (error instanceof errors.E_VALIDATION_ERROR) {
         return response.internalServerError({
           message: error.messages[0]?.message || 'GENERAL_ERROR',

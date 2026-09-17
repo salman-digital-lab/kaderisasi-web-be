@@ -7,6 +7,7 @@ import { sanitizeRichText } from '#services/rich_text_service'
 import Activity from '#models/activity'
 import db from '@adonisjs/lucid/services/db'
 import { isActivityRegistrationOpen } from '#services/activity_registration_service'
+import { schemaHash, claimFormAttachments, FormRequestError } from '#services/form_session_service'
 
 export default class CustomFormsController {
   async getByFeature({ request, response }: HttpContext) {
@@ -39,7 +40,6 @@ export default class CustomFormsController {
         customForm = await CustomForm.query()
           .where('id', featureId)
           .where('feature_type', 'independent_form')
-          .where('is_active', true)
           .first()
       } else {
         // For activity_registration and club_registration
@@ -68,6 +68,7 @@ export default class CustomFormsController {
         message: 'GET_DATA_SUCCESS',
         data: {
           ...customForm.toJSON(),
+          schema_hash: schemaHash(customForm.formSchema),
           post_submission_info: customForm.postSubmissionInfo
             ? sanitizeRichText(customForm.postSubmissionInfo)
             : customForm.postSubmissionInfo,
@@ -83,7 +84,7 @@ export default class CustomFormsController {
 
   async register({ request, response, auth }: HttpContext) {
     try {
-      const { feature_type, feature_id, custom_form_data } = request.body()
+      const { feature_type, feature_id, custom_form_data, session_token } = request.body()
 
       if (!feature_type) {
         return response.badRequest({
@@ -139,6 +140,7 @@ export default class CustomFormsController {
 
           // Create new registration
           // Profile data is already saved separately, only save custom form data
+          await claimFormAttachments(trx, activeForm, session_token, user.id, submission.data)
           const registration = await ActivityRegistration.create(
             {
               userId: user.id,
@@ -201,11 +203,21 @@ export default class CustomFormsController {
         // Create new registration
         // Profile data is already saved separately, only save custom form data
         try {
-          const registration = await ClubRegistration.create({
-            memberId: user.id,
-            clubId: club.id,
-            status: 'PENDING',
-            additionalData: submission.data,
+          const registration = await db.transaction(async (trx) => {
+            const lockedForm = await CustomForm.query({ client: trx })
+              .where('id', activeCustomForm.id)
+              .forUpdate()
+              .firstOrFail()
+            await claimFormAttachments(trx, lockedForm, session_token, user.id, submission.data)
+            return ClubRegistration.create(
+              {
+                memberId: user.id,
+                clubId: club.id,
+                status: 'PENDING',
+                additionalData: submission.data,
+              },
+              { client: trx }
+            )
           })
 
           return response.created({
@@ -220,24 +232,16 @@ export default class CustomFormsController {
           throw error
         }
       } else if (feature_type === 'independent_form') {
-        // For independent_form, just return success without saving to database
-        return response.ok({
-          message: 'INDEPENDENT_FORM_SUBMIT_SUCCESS',
-          data: {
-            submitted_at: new Date().toISOString(),
-            user_id: user.id,
-          },
-        })
+        return response.badRequest({ message: 'USE_STANDALONE_FORM_RESPONSE_ENDPOINT' })
       } else {
         return response.badRequest({
           message: 'INVALID_FEATURE_TYPE',
         })
       }
     } catch (error) {
-      return response.internalServerError({
-        message: 'GENERAL_ERROR',
-        error: error.message,
-      })
+      if (error instanceof FormRequestError)
+        return response.status(error.status).send({ message: error.message })
+      return response.internalServerError({ message: 'GENERAL_ERROR', error: error.message })
     }
   }
 }

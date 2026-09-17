@@ -10,6 +10,7 @@ const LeaderboardsController = () => import('#controllers/leaderboards_controlle
 const ClubsController = () => import('#controllers/clubs_controller')
 const ClubRegistrationsController = () => import('#controllers/club_registrations_controller')
 const CustomFormsController = () => import('#controllers/custom_forms_controller')
+const FormResponsesController = () => import('#controllers/form_responses_controller')
 const CertificatesController = () => import('#controllers/certificates_controller')
 const MembersController = () => import('#controllers/members_controller')
 const CoursesController = () => import('#controllers/courses_controller')
@@ -124,6 +125,10 @@ router
     router
       .group(() => {
         router.get('by-feature', [CustomFormsController, 'getByFeature'])
+        router.post('/:id/sessions', [FormResponsesController, 'session'])
+        router.post('/:id/responses', [FormResponsesController, 'submit'])
+        router.post('/:id/files/:key', [FormResponsesController, 'upload'])
+        router.delete('/:id/files/:attachmentId', [FormResponsesController, 'removeUpload'])
         router.post('register', [CustomFormsController, 'register']).use(middleware.auth())
       })
       .prefix('custom-forms')
