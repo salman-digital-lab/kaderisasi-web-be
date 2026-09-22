@@ -44,6 +44,25 @@ function certificateData(): CertificateResponseData {
 }
 
 test.group('Public certificate serialization', () => {
+  test('keeps the score sheet private to authenticated certificate responses', ({ assert }) => {
+    const data = certificateData()
+    data.participant.scoring_result = {
+      revision: 2,
+      published_at: '2026-09-22T00:00:00Z',
+      note: 'Private participant score note',
+      rubric: { groups: [], grades: [], note: '' },
+      result: { criteria: [], total: 87.5, grade: 'B', complete: true },
+    }
+    for (const serialized of [
+      serializePublicCertificate(data),
+      serializeCertificateVerification(data),
+    ]) {
+      const payload = JSON.stringify(serialized)
+      assert.notInclude(payload, 'scoring_result')
+      assert.notInclude(payload, 'Private participant score note')
+      assert.notInclude(payload, '87.5')
+    }
+  })
   test('exposes approval identity without internal audit fields', ({ assert }) => {
     const data = certificateData()
     data.certificate.approval = {

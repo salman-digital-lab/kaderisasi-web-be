@@ -2,6 +2,7 @@ import ActivityRegistration from '#models/activity_registration'
 import IssuedCertificate from '#models/issued_certificate'
 import { hasCertificateApproval, publicApproval } from '#services/certificate_approval'
 import type { CertificateApproval } from '#services/certificate_approval'
+import type { PublishedScoringResult } from '#services/activity_scoring'
 
 export const ELIGIBLE_CERTIFICATE_STATUS = 'LULUS KEGIATAN'
 export const CERTIFICATE_CODE_MAX_LENGTH = 96
@@ -13,6 +14,7 @@ export type CertificateOwnerState =
   | 'issued_revoked'
 
 export type CertificateParticipantData = {
+  scoring_result?: PublishedScoringResult
   registration_id: number
   user_id: number | null
   name: string
