@@ -14,6 +14,18 @@ const FormResponsesController = () => import('#controllers/form_responses_contro
 const CertificatesController = () => import('#controllers/certificates_controller')
 const MembersController = () => import('#controllers/members_controller')
 const CoursesController = () => import('#controllers/courses_controller')
+const NotificationsController = () => import('#controllers/notifications_controller')
+
+router
+  .group(() => {
+    router.get('/', [NotificationsController, 'index'])
+    router.get('/unread-count', [NotificationsController, 'count'])
+    router.put('/read-all', [NotificationsController, 'readAll'])
+    router.get('/:id', [NotificationsController, 'show'])
+    router.put('/:id/read', [NotificationsController, 'read'])
+  })
+  .prefix('/v2/notifications')
+  .use(middleware.auth())
 
 router
   .group(() => {
