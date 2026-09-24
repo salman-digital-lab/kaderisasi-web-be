@@ -14,6 +14,7 @@ export default class CustomFormsController {
     try {
       const featureType = request.qs().feature_type
       const featureId = request.qs().feature_id
+      const successView = request.qs().view === 'success'
 
       if (!featureType) {
         return response.badRequest({
@@ -28,6 +29,9 @@ export default class CustomFormsController {
         if (!activity?.isPublished) return response.notFound({ message: 'ACTIVITY_NOT_FOUND' })
       }
 
+      const formQuery = CustomForm.query()
+      if (successView) formQuery.select(['id', 'post_submission_info'])
+
       if (featureType === 'independent_form') {
         // For independent forms, we need to get by ID instead of feature_id
         // Feature_id in this case will be the custom form's ID
@@ -37,7 +41,7 @@ export default class CustomFormsController {
           })
         }
 
-        customForm = await CustomForm.query()
+        customForm = await formQuery
           .where('id', featureId)
           .where('feature_type', 'independent_form')
           .first()
@@ -49,7 +53,7 @@ export default class CustomFormsController {
           })
         }
 
-        customForm = await CustomForm.query()
+        customForm = await formQuery
           .where('feature_type', featureType)
           .where('feature_id', featureId)
           .where('is_active', true)
@@ -61,6 +65,18 @@ export default class CustomFormsController {
       if (!customForm) {
         return response.notFound({
           message: 'CUSTOM_FORM_NOT_FOUND',
+        })
+      }
+
+      if (successView) {
+        return response.ok({
+          message: 'GET_DATA_SUCCESS',
+          data: {
+            id: customForm.id,
+            post_submission_info: customForm.postSubmissionInfo
+              ? sanitizeRichText(customForm.postSubmissionInfo)
+              : customForm.postSubmissionInfo,
+          },
         })
       }
 
