@@ -15,6 +15,7 @@ export type CertificateOwnerState =
 
 export type CertificateParticipantData = {
   scoring_result?: PublishedScoringResult
+  certificate_group?: string | null
   registration_id: number
   user_id: number | null
   name: string
@@ -29,6 +30,19 @@ export type CertificateActivityData = {
   id: number
   name: string
   activity_start: string | null
+  certificate_settings?: {
+    version: 1
+    institution: string
+    role: string
+    event_date: string
+    hijri_date: string
+    delivery_mode: string
+    venue: string
+    organizer: string
+    document_place: string
+    document_date: string
+    include_scores: boolean
+  }
 }
 
 export type CertificateTemplateData = {
@@ -38,6 +52,7 @@ export type CertificateTemplateData = {
   background_image: string | null
   template_data: {
     backgroundUrl: string | null
+    scoreSheetLayout?: 'salman-v1'
     elements: Array<{
       id: string
       type: 'static-text' | 'variable-text' | 'image' | 'qr-code' | 'signature'
@@ -96,6 +111,7 @@ export type PublicCertificateRenderData = {
     name: string
     activity_start: string | null
     activity_date: string
+    certificate_settings?: CertificateActivityData['certificate_settings']
   }
   template: {
     name: string
@@ -236,6 +252,7 @@ export function serializePublicCertificate(
       name: data.activity.name,
       activity_start: data.activity.activity_start,
       activity_date: data.participant.activity_date,
+      certificate_settings: data.activity.certificate_settings,
     },
     template: {
       name: data.template.name,

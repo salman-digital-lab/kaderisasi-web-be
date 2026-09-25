@@ -32,6 +32,9 @@ export default class ActivityRegistration extends BaseModel {
   declare status: string
 
   @column()
+  declare certificateGroup: string | null
+
+  @column()
   declare questionnaireAnswer: Record<string, any>
 
   @column({ serializeAs: null })
