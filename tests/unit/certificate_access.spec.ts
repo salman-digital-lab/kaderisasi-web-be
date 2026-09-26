@@ -7,6 +7,8 @@ import {
   getCertificateDownloadAccess,
   getOwnerCertificateByCode,
   getPublicCertificateByCode,
+  getOwnerCertificateByRegistration,
+  getOwnerRegistrationCertificateState,
 } from '#services/certificate_service'
 import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
@@ -15,8 +17,19 @@ import { randomUUID } from 'node:crypto'
 test.group('Certificate access integration', (group) => {
   group.each.setup(async () => {
     if (process.env.CERTIFICATE_INTEGRATION !== '1') return async () => {}
-    if (!['127.0.0.1', 'localhost'].includes(process.env.DB_HOST ?? ''))
-      throw new Error('Disposable localhost database required')
+    const schema = process.env.CERTIFICATE_TEST_SCHEMA ?? ''
+    if (!/^go_rewrite_[a-f0-9]{16}_candidate$/.test(schema))
+      throw new Error('Owned certificate schema required')
+    const ownership = await db.rawQuery(
+      'SELECT current_schema() AS schema, current_schemas(false)=ARRAY[?]::name[] AS isolated, obj_description(oid) AS marker FROM pg_namespace WHERE nspname=?',
+      [schema, schema]
+    )
+    if (
+      ownership.rows[0]?.schema !== schema ||
+      !ownership.rows[0]?.isolated ||
+      ownership.rows[0]?.marker !== `certificate approval test ${schema.split('_')[2]}`
+    )
+      throw new Error('Certificate schema ownership mismatch')
     await db.beginGlobalTransaction()
     return async () => {
       await db.rollbackGlobalTransaction()
@@ -92,6 +105,30 @@ test.group('Certificate access integration', (group) => {
       success: true,
       data: { can_download: false, reason: 'revoked' },
     })
+    assert.deepEqual(await getOwnerCertificateByCode(issued.certificateCode, user.id), {
+      success: false,
+      error: 'CERTIFICATE_REVOKED',
+    })
+    const replacement = await IssuedCertificate.create({
+      certificateCode: `CERT-${randomUUID().toUpperCase()}`,
+      registrationId: registration.id,
+      userId: user.id,
+      activityId: activity.id,
+      templateId: template.id,
+      templateVersion: 1,
+      snapshotVersion: 1,
+      issuedAt: DateTime.now(),
+      templateSnapshot: issued.templateSnapshot,
+      participantSnapshot: { ...issued.participantSnapshot, name: 'Corrected participant' },
+      activitySnapshot: issued.activitySnapshot,
+    })
+    const latest = await getOwnerCertificateByRegistration(registration.id, user.id)
+    assert.isTrue(latest.success)
+    if (latest.success)
+      assert.equal(latest.data.certificate.certificate_code, replacement.certificateCode)
+    const state = await getOwnerRegistrationCertificateState(registration.id, user.id)
+    assert.isTrue(state.success)
+    if (state.success) assert.equal(state.data.certificate_code, replacement.certificateCode)
     assert.deepEqual(await getOwnerCertificateByCode(issued.certificateCode, user.id), {
       success: false,
       error: 'CERTIFICATE_REVOKED',

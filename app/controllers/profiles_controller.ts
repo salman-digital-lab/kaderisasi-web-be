@@ -96,10 +96,12 @@ export default class ProfilesController {
         .preload('activity')
       const issuedCertificates =
         registrations.length > 0
-          ? await IssuedCertificate.query().whereIn(
-              'registrationId',
-              registrations.map((registration) => registration.id)
-            )
+          ? await IssuedCertificate.query()
+              .orderBy('id', 'asc')
+              .whereIn(
+                'registrationId',
+                registrations.map((registration) => registration.id)
+              )
           : []
       const issuedByRegistration = new Map(
         issuedCertificates.map((certificate) => [certificate.registrationId, certificate])

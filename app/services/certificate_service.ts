@@ -346,7 +346,10 @@ export async function getOwnerRegistrationCertificateState(
     return { success: false, error: 'FORBIDDEN' }
   }
 
-  const issued = await IssuedCertificate.findBy('registrationId', registrationId)
+  const issued = await IssuedCertificate.query()
+    .where('registrationId', registrationId)
+    .orderBy('id', 'desc')
+    .first()
   return { success: true, data: serializeOwnerCertificateState(registration, issued) }
 }
 
@@ -395,7 +398,10 @@ export async function getOwnerCertificateByRegistration(
     return { success: false, error: 'FORBIDDEN' }
   }
 
-  const issued = await IssuedCertificate.findBy('registrationId', registrationId)
+  const issued = await IssuedCertificate.query()
+    .where('registrationId', registrationId)
+    .orderBy('id', 'desc')
+    .first()
 
   if (!issued || !hasCertificateApproval(issued)) {
     return { success: false, error: 'CERTIFICATE_NOT_ISSUED' }
