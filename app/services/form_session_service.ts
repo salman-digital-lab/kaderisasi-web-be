@@ -53,14 +53,20 @@ export function schemaHash(schema: object): string {
   }
   return tokenHash(JSON.stringify(stable(schema)))
 }
-export async function requireOpenForm(form: CustomForm, userId: number | null): Promise<void> {
+export async function requireOpenForm(
+  form: CustomForm,
+  userId: number | null,
+  trx?: TransactionClientContract
+): Promise<void> {
   if (!form.isActive) throw new FormRequestError(409, 'FORM_CLOSED')
   const schema = form.formSchema as UploadSchema
   if (form.featureType === 'independent_form') {
     if (schema.settings?.accessMode !== 'public' && !userId)
       throw new FormRequestError(401, 'LOGIN_REQUIRED')
   } else if (form.featureType === 'activity_registration') {
-    const activity = await Activity.find(form.featureId)
+    const activity = await Activity.query({ client: trx })
+      .where('id', form.featureId ?? 0)
+      .first()
     if (!activity || !isActivityRegistrationOpen(activity))
       throw new FormRequestError(409, 'REGISTRATION_CLOSED')
     if (
@@ -70,7 +76,9 @@ export async function requireOpenForm(form: CustomForm, userId: number | null): 
       throw new FormRequestError(403, 'GUEST_REGISTRATION_NOT_ALLOWED')
   } else if (form.featureType === 'club_registration') {
     if (!userId) throw new FormRequestError(401, 'LOGIN_REQUIRED')
-    const club = await Club.find(form.featureId)
+    const club = await Club.query({ client: trx })
+      .where('id', form.featureId ?? 0)
+      .first()
     if (!club || !isClubRegistrationOpen(club))
       throw new FormRequestError(409, 'REGISTRATION_CLOSED')
   } else throw new FormRequestError(404, 'CUSTOM_FORM_NOT_FOUND')
@@ -104,6 +112,26 @@ export async function lockFormSession(
     .where('token_hash', tokenHash(token))
     .where('form_id', form.id)
     .forUpdate()
+    .first()) as FormSession | undefined
+  if (
+    !session ||
+    session.user_id !== userId ||
+    new Date(session.expires_at).getTime() <= Date.now()
+  )
+    throw new FormRequestError(422, 'INVALID_FORM_SESSION')
+  return session
+}
+
+export async function readFormSession(
+  form: CustomForm,
+  token: string,
+  userId: number | null
+): Promise<FormSession> {
+  if (!/^[a-f0-9]{64}$/.test(token)) throw new FormRequestError(422, 'INVALID_FORM_SESSION')
+  const session = (await db
+    .from('custom_form_sessions')
+    .where('token_hash', tokenHash(token))
+    .where('form_id', form.id)
     .first()) as FormSession | undefined
   if (
     !session ||
@@ -203,7 +231,7 @@ export async function submitStandalone(
     const session = await lockFormSession(trx, form, token, userId)
     const existing = await trx.from('custom_form_responses').where('session_id', session.id).first()
     if (existing) return { id: existing.id }
-    await requireOpenForm(form, userId)
+    await requireOpenForm(form, userId, trx)
     if (session.schema_hash !== schemaHash(form.formSchema))
       throw new FormRequestError(409, 'FORM_SCHEMA_CHANGED')
     // Identity on standalone forms is response data, never a profile update.

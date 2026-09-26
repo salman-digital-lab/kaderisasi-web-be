@@ -1,0 +1,196 @@
+{
+  "date": "2026-09-26",
+  "environment": "configured test database; owned schemas only",
+  "benchmarks": [
+    {
+      "benchmark": "activity-history-1000",
+      "baseline_ms": 31783.397417,
+      "after_ms": 81.55604199999652,
+      "baseline_bytes": 24313680,
+      "after_bytes": 1671,
+      "after_queries": 1
+    },
+    {
+      "benchmark": "course-sidebar-100",
+      "baseline_bytes": 10420677,
+      "after_bytes": 6176
+    },
+    {
+      "benchmark": "upload-delayed-put",
+      "other_session_finalize_ms": 712.6487500000003,
+      "form_row_locks_during_put": 0
+    }
+  ],
+  "email_index_explain": {
+    "before": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Seq Scan",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "public_users",
+              "Alias": "public_users",
+              "Startup Cost": 0,
+              "Total Cost": 224.03,
+              "Plan Rows": 50,
+              "Plan Width": 25,
+              "Actual Startup Time": 1.15,
+              "Actual Total Time": 2.251,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Filter": "(lower((email)::text) = 'user5000@example.test'::text)",
+              "Rows Removed by Filter": 10001,
+              "Shared Hit Blocks": 74,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning": {
+              "Shared Hit Blocks": 33,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.325,
+            "Triggers": [],
+            "Execution Time": 2.268
+          }
+        ]
+      }
+    ],
+    "after": [
+      {
+        "QUERY PLAN": [
+          {
+            "Plan": {
+              "Node Type": "Bitmap Heap Scan",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Relation Name": "public_users",
+              "Alias": "public_users",
+              "Startup Cost": 4.67,
+              "Total Cost": 75.73,
+              "Plan Rows": 50,
+              "Plan Width": 25,
+              "Actual Startup Time": 0.037,
+              "Actual Total Time": 0.038,
+              "Actual Rows": 1,
+              "Actual Loops": 1,
+              "Recheck Cond": "(lower((email)::text) = 'user5000@example.test'::text)",
+              "Rows Removed by Index Recheck": 0,
+              "Exact Heap Blocks": 1,
+              "Lossy Heap Blocks": 0,
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Plans": [
+                {
+                  "Node Type": "Bitmap Index Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Index Name": "idx_public_users_lower_email",
+                  "Startup Cost": 0,
+                  "Total Cost": 4.66,
+                  "Plan Rows": 50,
+                  "Plan Width": 0,
+                  "Actual Startup Time": 0.03,
+                  "Actual Total Time": 0.031,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Index Cond": "(lower((email)::text) = 'user5000@example.test'::text)",
+                  "Shared Hit Blocks": 2,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                }
+              ]
+            },
+            "Planning": {
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Shared Dirtied Blocks": 0,
+              "Shared Written Blocks": 0,
+              "Local Hit Blocks": 0,
+              "Local Read Blocks": 0,
+              "Local Dirtied Blocks": 0,
+              "Local Written Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.105,
+            "Triggers": [],
+            "Execution Time": 0.104
+          }
+        ]
+      }
+    ]
+  },
+  "browser_checks": {
+    "profile_and_status": 68,
+    "focused_history_and_status": 16
+  },
+  "frontend_unit_tests": 192,
+  "backend_unit_tests": 54,
+  "google_account_tests": 6,
+  "migration_tests": 7,
+  "public_database_tests": {
+    "passed_in_combined_run": 8,
+    "removal_test": "Passed focused rerun after correcting assertion: Lucid first() returns null, not undefined"
+  },
+  "go_integration_packages": [
+    "internal/jobs",
+    "internal/form",
+    "internal/course"
+  ],
+  "shared_api_checks": 95,
+  "course_api_checks": 165,
+  "course_storage_cleanup": {
+    "status": "cleaned",
+    "keys": 3
+  },
+  "shared_fixture_cleanup": {
+    "run": "179efd98aa0ad9d4",
+    "created_at": "2026-09-26T11:56:48.586Z",
+    "schemas": [
+      "go_rewrite_179efd98aa0ad9d4_baseline",
+      "go_rewrite_179efd98aa0ad9d4_candidate",
+      "go_rewrite_179efd98aa0ad9d4_cross"
+    ],
+    "storage_keys": [],
+    "status": "cleaned",
+    "cleaned_at": "2026-09-26T12:05:58.385Z"
+  },
+  "public_schema_cleanup": {
+    "schema": "public_perf_b1d5b0fb21b84d96b458a19f74bc1da9",
+    "cleaned": true,
+    "storage": "in-memory controlled adapter; no external objects"
+  }
+}

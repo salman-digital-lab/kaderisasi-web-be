@@ -4,6 +4,7 @@ import router from '@adonisjs/core/services/router'
 const AuthController = () => import('#controllers/auth_controller')
 const GoogleAuthController = () => import('#controllers/google_auth_controller')
 const ProfilesController = () => import('#controllers/profiles_controller')
+const ProfileHistoriesController = () => import('#controllers/profile_histories_controller')
 const ActivitiesController = () => import('#controllers/activities_controller')
 const RuangCurhatsController = () => import('#controllers/ruang_curhats_controller')
 const LeaderboardsController = () => import('#controllers/leaderboards_controller')
@@ -61,6 +62,7 @@ router
       .group(() => {
         router.put('', [ProfilesController, 'update'])
         router.get('', [ProfilesController, 'show'])
+        router.get('history/:section', [ProfileHistoriesController, 'index'])
         router.get('activities', [ProfilesController, 'activities'])
         router.get('activities/:slug', [ActivitiesController, 'registrationCheck'])
         router.post('picture', [ProfilesController, 'uploadPicture'])
@@ -104,6 +106,7 @@ router
         router.get('monthly', [LeaderboardsController, 'monthly'])
         router.get('lifetime', [LeaderboardsController, 'lifetime'])
         router.get('my-rank', [LeaderboardsController, 'myLifetimeRank']).use(middleware.auth())
+        router.get(':id', [ProfileHistoriesController, 'achievement']).use(middleware.auth())
         router.get('', [LeaderboardsController, 'myAchievements']).use(middleware.auth())
       })
       .prefix('achievements')

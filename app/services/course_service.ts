@@ -74,7 +74,7 @@ async function levelFor(userId: number, trx?: TransactionClientContract): Promis
 }
 function withProgress(userId: number): ModelQueryBuilderContract<typeof Course> {
   return Course.query()
-    .select('courses.*')
+    .select(['courses.id', 'courses.title', 'courses.summary', 'courses.minimum_level'])
     .select(
       db.raw(
         '(SELECT count(*) FROM course_lessons l WHERE l.course_id=courses.id AND l.deleted_at IS NULL) AS total_lessons'
@@ -110,7 +110,7 @@ function lessonSummary(row: CourseLesson): LessonSummary {
     id: row.id,
     title: row.title,
     position: row.position,
-    completed: Boolean(row.progress?.[0]?.completedAt),
+    completed: Boolean(row.$extras.completed),
   }
 }
 
@@ -138,27 +138,34 @@ export async function listCourses(
     },
   }
 }
-async function readableCourse(userId: number, id: number): Promise<Course> {
+async function readableCourse(userId: number, id: number, description = false): Promise<Course> {
   const level = await levelFor(userId)
   if (level === null) throw new CourseAccessError()
-  const row = await withProgress(userId)
+  const query = withProgress(userId)
     .where('id', id)
     .where('status', 'published')
     .where('minimum_level', '<=', level)
-    .first()
+  if (description) query.select('courses.description')
+  const row = await query.first()
   if (!row) throw new CourseAccessError()
   return row
 }
 async function lessonsFor(userId: number, id: number): Promise<CourseLesson[]> {
   return CourseLesson.query()
+    .select(['id', 'title', 'position'])
+    .select(
+      db.raw(
+        'EXISTS (SELECT 1 FROM course_lesson_progress p WHERE p.lesson_id=course_lessons.id AND p.user_id=? AND p.completed_at IS NOT NULL) AS completed',
+        [userId]
+      )
+    )
     .where('course_id', id)
     .whereNull('deleted_at')
     .orderBy('position')
     .orderBy('id')
-    .preload('progress', (q) => q.where('user_id', userId))
 }
 export async function showCourse(userId: number, id: number): Promise<CourseDetail> {
-  const row = await readableCourse(userId, id)
+  const row = await readableCourse(userId, id, true)
   const lessons = await lessonsFor(userId, id)
   return {
     ...summary(row),
@@ -172,17 +179,27 @@ export async function showLesson(
   lessonId: number
 ): Promise<LessonDetail> {
   const course = await readableCourse(userId, id)
-  const lessons = await lessonsFor(userId, id)
-  const lesson = lessons.find((row) => row.id === lessonId)
-  if (!lesson) throw new CourseAccessError()
-  const documents = await CourseDocument.query()
-    .where('lesson_id', lessonId)
+  const lesson = await CourseLesson.query()
+    .select(['id', 'description', 'youtube_video_id'])
+    .where('course_id', id)
+    .where('id', lessonId)
     .whereNull('deleted_at')
-    .orderBy('id')
+    .first()
+  if (!lesson) throw new CourseAccessError()
+  const [lessons, documents] = await Promise.all([
+    lessonsFor(userId, id),
+    CourseDocument.query()
+      .select(['id', 'filename', 'size_bytes'])
+      .where('lesson_id', lessonId)
+      .whereNull('deleted_at')
+      .orderBy('id'),
+  ])
+  const selected = lessons.find((row) => row.id === lessonId)
+  if (!selected) throw new CourseAccessError()
   return {
     course: summary(course),
     lesson: {
-      ...lessonSummary(lesson),
+      ...lessonSummary(selected),
       description: sanitizeRichText(lesson.description),
       youtube_video_id: lesson.youtubeVideoId,
     },
@@ -241,19 +258,25 @@ export async function readableDocument(
   id: number,
   lessonId: number,
   documentId: number
-): Promise<CourseDocument> {
-  await readableCourse(userId, id)
-  const lesson = await CourseLesson.query()
-    .where('course_id', id)
-    .where('id', lessonId)
-    .whereNull('deleted_at')
+): Promise<{ filename: string; storageKey: string }> {
+  const level = await levelFor(userId)
+  if (level === null) throw new CourseAccessError()
+  const course = await Course.query()
+    .select('id')
+    .where('id', id)
+    .where('status', 'published')
+    .where('minimum_level', '<=', level)
     .first()
-  if (!lesson) throw new CourseAccessError()
+  if (!course) throw new CourseAccessError()
   const document = await CourseDocument.query()
-    .where('id', documentId)
-    .where('lesson_id', lessonId)
-    .whereNull('deleted_at')
+    .select(['course_documents.filename', 'course_documents.storage_key'])
+    .join('course_lessons as lesson', 'lesson.id', 'course_documents.lesson_id')
+    .where('course_documents.id', documentId)
+    .where('course_documents.lesson_id', lessonId)
+    .where('lesson.course_id', id)
+    .whereNull('lesson.deleted_at')
+    .whereNull('course_documents.deleted_at')
     .first()
   if (!document) throw new CourseAccessError()
-  return document
+  return { filename: document.filename, storageKey: document.storageKey }
 }
