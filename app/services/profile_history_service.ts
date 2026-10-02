@@ -174,7 +174,9 @@ export async function consultationHistory(
 export async function achievementHistory(
   userId: number,
   query: HistoryQuery
-): Promise<HistoryPage<AchievementHistoryItem, { total: number; points: number }>> {
+): Promise<
+  HistoryPage<AchievementHistoryItem, { total: number; points: number; pending: number }>
+> {
   return historyPage(
     userId,
     query,
@@ -182,6 +184,7 @@ export async function achievementHistory(
        a.achievement_date AS sort_date,(input.search='' OR strpos(lower(coalesce(a.name,'')),input.search)>0) AS search_match
        FROM achievements a,input WHERE a.user_id=input.user_id`,
     `to_jsonb(p)-'sort_date'-'search_match'`,
-    `jsonb_build_object('total',count(*),'points',coalesce(sum(score),0))`
+    // Only approved achievements earn points (status 1); pending ones are counted separately.
+    `jsonb_build_object('total',count(*),'points',coalesce(sum(score) FILTER (WHERE status=1),0),'pending',count(*) FILTER (WHERE status=0))`
   )
 }

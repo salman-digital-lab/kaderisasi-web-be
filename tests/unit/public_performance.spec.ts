@@ -113,7 +113,7 @@ test.group('Owned public performance fixtures', (group) => {
     )
     await db.rawQuery(
       `INSERT INTO achievements(user_id,name,description,achievement_date,type,score,proof,status)
-      SELECT ?,'Achievement '||n,'Details',CURRENT_DATE,0,10,'proof',0 FROM generate_series(1,1000) n`,
+      SELECT ?,'Achievement '||n,'Details',CURRENT_DATE,0,10,'proof',n%2 FROM generate_series(1,1000) n`,
       [userId]
     )
     await db.rawQuery(
@@ -158,7 +158,9 @@ test.group('Owned public performance fixtures', (group) => {
       historyQuery({ search: 'Achievement 1000' })
     )
     assert.equal(achievement.meta.total, 1)
-    assert.equal(achievement.summary.points, 10000)
+    // Points count approved achievements only; pending ones are reported separately.
+    assert.equal(achievement.summary.points, 5000)
+    assert.equal(achievement.summary.pending, 500)
     const consultation = await consultationHistory(
       userId,
       historyQuery({ per_page: 1000, search: 'Family' })
