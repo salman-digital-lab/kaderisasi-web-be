@@ -135,6 +135,14 @@ test.group('Certificate access integration', (group) => {
     })
     const revokedPublic = await getPublicCertificateByCode(issued.certificateCode)
     assert.isTrue(revokedPublic.success)
+    assert.deepEqual(await getCertificateDownloadAccess(issued.certificateCode, user.id), {
+      success: true,
+      data: { can_download: false, reason: 'revoked', current_code: replacement.certificateCode },
+    })
+    assert.deepEqual(await getCertificateDownloadAccess(issued.certificateCode, user.id + 1), {
+      success: true,
+      data: { can_download: false, reason: 'not_owner' },
+    })
     assert.deepEqual(await getCertificateDownloadAccess('MISSING', user.id), {
       success: false,
       error: 'CERTIFICATE_NOT_FOUND',

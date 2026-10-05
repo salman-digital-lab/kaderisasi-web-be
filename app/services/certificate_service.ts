@@ -414,20 +414,35 @@ export async function getOwnerCertificateByRegistration(
   return { success: true, data: buildIssuedResponseData(issued) }
 }
 
+export type CertificateDownloadAccessData = {
+  can_download: boolean
+  reason: 'owner' | 'not_owner' | 'revoked'
+  /** Present only for the owner of a withdrawn certificate that was republished. */
+  current_code?: string
+}
+
 export async function getCertificateDownloadAccess(
   code: string,
   userId: number
-): Promise<
-  CertificateResult<{ can_download: boolean; reason: 'owner' | 'not_owner' | 'revoked' }>
-> {
+): Promise<CertificateResult<CertificateDownloadAccessData>> {
   const normalized = normalizeCertificateCode(code)
   if (!normalized) return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
   const issued = await IssuedCertificate.query()
-    .select('id', 'userId', 'revokedAt', 'templateSnapshot', 'approvalSnapshot')
+    .select('id', 'userId', 'registrationId', 'revokedAt', 'templateSnapshot', 'approvalSnapshot')
     .where('certificateCode', normalized)
     .first()
   if (!issued || !hasCertificateApproval(issued))
     return { success: false, error: 'CERTIFICATE_NOT_FOUND' }
   const reason = issued.userId !== userId ? 'not_owner' : issued.revokedAt ? 'revoked' : 'owner'
-  return { success: true, data: { can_download: reason === 'owner', reason } }
+  const data: CertificateDownloadAccessData = { can_download: reason === 'owner', reason }
+  if (reason === 'revoked') {
+    const current = await IssuedCertificate.query()
+      .select('id', 'certificateCode', 'templateSnapshot', 'approvalSnapshot')
+      .where('registrationId', issued.registrationId)
+      .where('userId', userId)
+      .whereNull('revokedAt')
+      .first()
+    if (current && hasCertificateApproval(current)) data.current_code = current.certificateCode
+  }
+  return { success: true, data }
 }
