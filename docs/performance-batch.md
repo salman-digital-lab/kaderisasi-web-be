@@ -36,7 +36,7 @@ From `kaderisasi-web-be`:
 
 From `kaderisasi-admin-be`:
 
-- Lint, typecheck, build and `MIGRATION_TEST_ENV=../docs/.env.test.be npm test` passed (seven tests).
+- Lint, typecheck, build and `MIGRATION_TEST_ENV=../env/test/admin-be-test-env npm test` passed (seven tests).
 - The index test cancels a real concurrent index build, verifies the invalid catalog entry, then retries through Ace. It also covers rollback/reapply, a valid index left by lost acknowledgement, unrelated-index refusal and mixed-case duplicates. Representative `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` output is retained at `tmp/email-index/explain.json`.
 
 From `kaderisasi-web-fe`:
