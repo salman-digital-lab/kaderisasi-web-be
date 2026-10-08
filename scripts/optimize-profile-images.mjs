@@ -43,9 +43,9 @@ if (
 }
 const profileTable = `"${values.schema || 'public'}".profiles`
 const workspace = fileURLToPath(new URL('../../', import.meta.url))
-const env = parseEnv(await readFile(join(workspace, `docs/.env.${values.environment}.be`), 'utf8'))
+const env = parseEnv(await readFile(join(workspace, `env/${values.environment}/web-be-${values.environment}-env`), 'utf8'))
 const fe = parseEnv(
-  await readFile(join(workspace, `docs/.env.${values.environment}.web-fe`), 'utf8')
+  await readFile(join(workspace, `env/${values.environment}/web-fe-${values.environment}-env`), 'utf8')
 )
 const directory = resolve(values.directory)
 await mkdir(directory, { recursive: true, mode: 0o700 })

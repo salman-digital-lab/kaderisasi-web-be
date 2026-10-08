@@ -10,7 +10,7 @@ New keys use `profile/<userId>/<uuid>.webp`. A new object is stored before a tra
 
 The frontend stores profile-picture URLs in cookies. Existing pictures therefore retain their keys and JPEG/PNG formats during optimization. This avoids stale-cookie failures and preserves external links. JPEG is encoded at quality 82; PNG uses lossless compression after resizing. An existing object is replaced only when the optimized file is smaller.
 
-The operational script runs from this source checkout on Node 24. It reads the explicitly selected `docs/.env.<environment>.be` and `.web-fe` files without replacing application environment files. Database connections are read-only. It targets only images currently referenced in `public.profiles.picture`.
+The operational script runs from this source checkout on Node 24. It reads the explicitly selected `env/<environment>/web-be-<environment>-env` and `web-fe-<environment>-env` files without replacing application environment files. Database connections are read-only. It targets only images currently referenced in `public.profiles.picture`.
 
 ```sh
 # First check conditional writes and public access using an owned test object.

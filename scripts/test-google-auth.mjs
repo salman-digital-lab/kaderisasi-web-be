@@ -6,7 +6,7 @@ import { once } from 'node:events'
 import pg from 'pg'
 
 // This runner uses only the shared test configuration and an owned schema.
-const env = parseEnv(await readFile(new URL('../../docs/.env.test.be', import.meta.url), 'utf8'))
+const env = parseEnv(await readFile(new URL('../../env/test/web-be-test-env', import.meta.url), 'utf8'))
 const schema = `google_auth_test_${randomUUID().replaceAll('-', '')}`
 const client = new pg.Client({
   host: env.DB_HOST,

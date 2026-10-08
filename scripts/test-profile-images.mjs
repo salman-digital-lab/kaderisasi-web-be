@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import pg from 'pg'
 
-const env = parseEnv(await readFile(new URL('../../docs/.env.test.be', import.meta.url), 'utf8'))
+const env = parseEnv(await readFile(new URL('../../env/test/web-be-test-env', import.meta.url), 'utf8'))
 const schema = `profile_image_test_${randomUUID().replaceAll('-', '')}`
 const client = new pg.Client({
   host: env.DB_HOST,
