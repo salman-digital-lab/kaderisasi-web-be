@@ -171,7 +171,10 @@ export default class LeaderboardsController {
             Bucket: env.get('DRIVE_BUCKET'),
             Key: fileName,
             Body: fileBuffer,
-            ContentType: proof.type || 'application/octet-stream',
+            ContentType:
+              proof.type && proof.subtype
+                ? `${proof.type}/${proof.subtype}`
+                : 'application/octet-stream',
             ACL: 'public-read',
           })
         )
